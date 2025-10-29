@@ -198,10 +198,12 @@ class StreamHandler(Handler):
     def close(self) -> None:
         """Flush the stream
         
-        Note: Does not close sys.stdout or sys.stderr
+        Note: Does not close sys.stdout, sys.stderr, or StringIO (for testing)
         """
         try:
-            if self.stream not in (sys.stdout, sys.stderr):
+            from io import StringIO
+            # Don't close sys.stdout, sys.stderr, or StringIO streams
+            if self.stream not in (sys.stdout, sys.stderr) and not isinstance(self.stream, StringIO):
                 self.stream.close()
             else:
                 self.stream.flush()

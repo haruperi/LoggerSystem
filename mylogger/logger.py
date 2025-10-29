@@ -16,6 +16,7 @@ from .exceptions import InvalidLevelError, HandlerNotFoundError
 from .handler import Handler, StreamHandler, FileHandler, CallableHandler
 from .formatter import Formatter
 from .bound_logger import BoundLogger
+from .async_handler import AsyncHandler
 from pathlib import Path
 
 
@@ -158,6 +159,7 @@ class Logger:
                 - serialize: JSON serialization (default: False)
                 - backtrace: Show full exception traceback (default: True)
                 - diagnose: Show variable values in exception frames (default: False)
+                - enqueue: Use async/non-blocking logging (default: False)
                 - mode: File mode for FileHandler (default: 'a')
                 - encoding: File encoding for FileHandler (default: 'utf-8')
                 - rotation: Rotation strategy for FileHandler (default: None)
@@ -190,6 +192,7 @@ class Logger:
             serialize = options.get('serialize', False)
             backtrace = options.get('backtrace', True)
             diagnose = options.get('diagnose', False)
+            enqueue = options.get('enqueue', False)
             
             # Get Level object
             if isinstance(level, str):
@@ -257,6 +260,16 @@ class Logger:
                 raise ValueError(
                     f"Invalid sink type: {type(sink)}. "
                     f"Expected str, Path, file-like object, or callable."
+                )
+            
+            # Wrap in AsyncHandler if enqueue=True
+            if enqueue:
+                max_queue_size = options.get('max_queue_size', 0)
+                overflow_strategy = options.get('overflow_strategy', 'block')
+                handler = AsyncHandler(
+                    wrapped_handler=handler,
+                    max_queue_size=max_queue_size,
+                    overflow_strategy=overflow_strategy
                 )
             
             # Assign unique ID
