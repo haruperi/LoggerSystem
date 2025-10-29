@@ -2,93 +2,101 @@
 Formatting classes for log output
 """
 
-from typing import Any, List, Dict, Optional
-
-
-class Token:
-    """Represents a token in a format string"""
-    
-    def __init__(self, token_type: str, value: str, field_name: str = None, format_spec: str = None):
-        self.type = token_type  # 'literal' or 'field'
-        self.value = value
-        self.field_name = field_name
-        self.format_spec = format_spec
+from typing import Any
 
 
 class Formatter:
-    """Format log records into strings"""
+    """Format log records into strings
     
-    def __init__(self, format_string: str, colorize: bool = True):
-        self.format_string = format_string
-        self.colorize = colorize
-        self.tokens: List[Token] = []
-        self.colorizer = Colorizer(enabled=colorize)
+    This is a simple formatter for Day 5. A more advanced formatter
+    with template parsing and color support will be implemented in Day 6.
+    
+    Attributes:
+        format_string: Format template (simple for now)
+        colorize: Whether to apply colors
+    """
+    
+    def __init__(self, format_string: str = None, colorize: bool = False):
+        """Initialize formatter
         
-    def format(self, record) -> str:
-        """Format a log record"""
-        # TODO: Implement formatting logic
-        return str(record)
-    
-    def parse_format_string(self) -> List[Token]:
-        """Parse format string into tokens"""
-        # TODO: Implement parsing
-        return []
-    
-    def get_field_value(self, record, field_name: str) -> Any:
-        """Extract field value from record"""
-        # TODO: Implement field extraction
-        return None
-
-
-class Colorizer:
-    """Handle ANSI color codes"""
-    
-    def __init__(self, enabled: bool = True):
-        self.enabled = enabled
-        self.colors = {
-            'black': '[30m',
-            'red': '[31m',
-            'green': '[32m',
-            'yellow': '[33m',
-            'blue': '[34m',
-            'magenta': '[35m',
-            'cyan': '[36m',
-            'white': '[37m',
-            'reset': '[0m',
-        }
-    
-    def colorize(self, text: str, color: str) -> str:
-        """Apply color to text"""
-        if not self.enabled:
-            return text
-        # TODO: Implement colorization
-        return text
-    
-    def strip_colors(self, text: str) -> str:
-        """Remove color codes from text"""
-        # TODO: Implement color stripping
-        return text
-
-
-class ExceptionFormatter:
-    """Format exception tracebacks"""
-    
-    def __init__(self, colorize: bool = True, backtrace: bool = True, diagnose: bool = False):
+        Args:
+            format_string: Format template (if None, use default)
+            colorize: Enable colorization (for Day 9)
+        """
+        self.format_string = format_string or self._default_format()
         self.colorize = colorize
-        self.backtrace = backtrace
-        self.diagnose = diagnose
+    
+    def _default_format(self) -> str:
+        """Return default format string
         
-    def format_exception(self, exc_info) -> str:
-        """Format exception information"""
-        # TODO: Implement exception formatting
-        return ""
+        Returns:
+            Default format template
+        """
+        return "{time} | {level} | {name}:{function}:{line} - {message}"
     
-    def format_traceback(self, tb) -> str:
-        """Format traceback"""
-        # TODO: Implement traceback formatting
-        return ""
+    def format(self, record: 'LogRecord') -> str:
+        """Format a log record
+        
+        This is a simple implementation for Day 5. A more sophisticated
+        formatter with proper parsing will be implemented in Day 6.
+        
+        Args:
+            record: LogRecord to format
+            
+        Returns:
+            Formatted string
+        """
+        try:
+            # Format time
+            time_str = record.time.strftime('%Y-%m-%d %H:%M:%S')
+            
+            # Build the formatted message
+            formatted = self.format_string
+            
+            # Replace placeholders (simple version)
+            replacements = {
+                '{time}': time_str,
+                '{level}': f"{record.level.name: <8}",  # Left-aligned, 8 chars
+                '{name}': record.name,
+                '{function}': record.function,
+                '{line}': str(record.line),
+                '{message}': record.message,
+                '{file}': record.file.name,
+                '{module}': record.module,
+                '{process}': str(record.process.id),
+                '{thread}': str(record.thread.id),
+                '{elapsed}': str(record.elapsed.total_seconds()),
+            }
+            
+            for placeholder, value in replacements.items():
+                formatted = formatted.replace(placeholder, value)
+            
+            return formatted
+            
+        except Exception as e:
+            # Fallback to simple format if something goes wrong
+            return f"[{record.level.name}] {record.message}"
     
-    def get_context_lines(self, filename: str, lineno: int, context: int = 5) -> List[str]:
-        """Get source code context around line"""
-        # TODO: Implement context extraction
-        return []
+    def get_field_value(self, record: 'LogRecord', field_name: str) -> Any:
+        """Extract field value from record
+        
+        Args:
+            record: LogRecord to extract from
+            field_name: Field name (e.g., 'level', 'level.name', 'extra.user_id')
+            
+        Returns:
+            Field value
+        """
+        # Simple implementation for now
+        parts = field_name.split('.')
+        obj = record
+        
+        for part in parts:
+            if hasattr(obj, part):
+                obj = getattr(obj, part)
+            elif isinstance(obj, dict) and part in obj:
+                obj = obj[part]
+            else:
+                return None
+        
+        return obj

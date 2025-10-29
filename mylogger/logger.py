@@ -12,7 +12,10 @@ import multiprocessing
 from .record import LogRecord, Level, FileInfo, ProcessInfo, ThreadInfo, ExceptionInfo
 from .level import DEFAULT_LEVELS
 from .utils import FrameInspector
-from .exceptions import InvalidLevelError
+from .exceptions import InvalidLevelError, HandlerNotFoundError
+from .handler import Handler, StreamHandler, FileHandler, CallableHandler
+from .formatter import Formatter
+from pathlib import Path
 
 
 class Logger:
@@ -45,24 +48,146 @@ class Logger:
     def add(self, sink: Any, **options) -> int:
         """Add a handler to the logger
         
+        Automatically detects the handler type based on the sink:
+        - str or Path: FileHandler
+        - file-like object (stream): StreamHandler
+        - callable: CallableHandler
+        
         Args:
             sink: Output destination (file path, stream, or callable)
-            **options: Handler configuration options
+            **options: Handler configuration options:
+                - level: Minimum level (str or int, default: TRACE/5)
+                - format: Format string (default: simple format)
+                - filter: Filter function (default: None)
+                - colorize: Enable colors (default: auto-detect)
+                - serialize: JSON serialization (default: False)
+                - mode: File mode for FileHandler (default: 'a')
+                - encoding: File encoding for FileHandler (default: 'utf-8')
             
         Returns:
             Handler ID for later removal
+            
+        Example:
+            >>> handler_id = logger.add("app.log", level="INFO")
+            >>> logger.add(sys.stderr, level="ERROR", colorize=True)
+            >>> logger.add(lambda msg: print(msg), level="DEBUG")
         """
-        # TODO: Implement handler addition (Day 5)
-        raise NotImplementedError("Handler management will be implemented in Day 5")
+        with self._lock:
+            # Parse options
+            level = options.get('level', 'TRACE')
+            format_string = options.get('format', None)
+            filter_func = options.get('filter', None)
+            colorize = options.get('colorize', None)
+            serialize = options.get('serialize', False)
+            
+            # Get Level object
+            if isinstance(level, str):
+                level_obj = self._get_level(level)
+            elif isinstance(level, int):
+                level_obj = self._get_level(level)
+            else:
+                level_obj = level  # Assume it's already a Level object
+            
+            # Create formatter
+            formatter = Formatter(format_string=format_string, colorize=colorize or False)
+            
+            # Determine handler type and create handler
+            handler = None
+            
+            if isinstance(sink, (str, Path)):
+                # File handler
+                mode = options.get('mode', 'a')
+                encoding = options.get('encoding', 'utf-8')
+                handler = FileHandler(
+                    sink=Path(sink),
+                    level=level_obj,
+                    formatter=formatter,
+                    mode=mode,
+                    encoding=encoding,
+                    filter_func=filter_func,
+                    colorize=colorize or False,
+                    serialize=serialize
+                )
+            
+            elif hasattr(sink, 'write') and hasattr(sink, 'flush'):
+                # Stream handler (has write and flush methods)
+                handler = StreamHandler(
+                    sink=sink,
+                    level=level_obj,
+                    formatter=formatter,
+                    filter_func=filter_func,
+                    colorize=colorize,
+                    serialize=serialize
+                )
+            
+            elif callable(sink):
+                # Callable handler
+                handler = CallableHandler(
+                    sink=sink,
+                    level=level_obj,
+                    formatter=formatter,
+                    filter_func=filter_func,
+                    colorize=colorize or False,
+                    serialize=serialize
+                )
+            
+            else:
+                raise ValueError(
+                    f"Invalid sink type: {type(sink)}. "
+                    f"Expected str, Path, file-like object, or callable."
+                )
+            
+            # Assign unique ID
+            self._handler_id_counter += 1
+            handler.id = self._handler_id_counter
+            
+            # Add to handlers list
+            self.handlers.append(handler)
+            
+            return handler.id
     
-    def remove(self, handler_id: int) -> None:
+    def remove(self, handler_id: int = None) -> None:
         """Remove a handler by ID
         
+        If no handler_id is provided, removes all handlers.
+        
         Args:
-            handler_id: ID of the handler to remove
+            handler_id: ID of the handler to remove (None = remove all)
+            
+        Raises:
+            HandlerNotFoundError: If handler_id is not found
+            
+        Example:
+            >>> handler_id = logger.add("app.log")
+            >>> logger.remove(handler_id)
+            >>> logger.remove()  # Remove all handlers
         """
-        # TODO: Implement handler removal (Day 5)
-        raise NotImplementedError("Handler management will be implemented in Day 5")
+        with self._lock:
+            if handler_id is None:
+                # Remove all handlers
+                for handler in self.handlers:
+                    try:
+                        handler.close()
+                    except Exception:
+                        pass
+                self.handlers.clear()
+                return
+            
+            # Find and remove specific handler
+            for i, handler in enumerate(self.handlers):
+                if handler.id == handler_id:
+                    try:
+                        handler.close()
+                    except Exception:
+                        pass
+                    self.handlers.pop(i)
+                    return
+            
+            # Handler not found
+            raise HandlerNotFoundError(
+                handler_id=handler_id,
+                message=f"Handler with ID {handler_id} not found"
+            )
     
     def trace(self, message: str, *args, **kwargs) -> None:
         """Log a trace message
@@ -366,16 +491,34 @@ class Logger:
     def _dispatch_record(self, record: LogRecord) -> None:
         """Dispatch a log record to all handlers
         
+        Sends the record to each registered handler. If no handlers
+        are registered, outputs to stderr as a fallback.
+        
         Args:
             record: LogRecord to dispatch
         """
-        # For now, just print to stderr (will be replaced with handler system in Day 5)
-        # Format: [LEVEL] message (file:line)
-        print(
-            f"[{record.level.name}] {record.message} "
-            f"({record.file.name}:{record.function}:{record.line})",
-            file=sys.stderr
-        )
+        if not self.handlers:
+            # Fallback: print to stderr if no handlers are registered
+            print(
+                f"[{record.level.name}] {record.message} "
+                f"({record.file.name}:{record.function}:{record.line})",
+                file=sys.stderr
+            )
+            return
+        
+        # Dispatch to all handlers
+        for handler in self.handlers:
+            try:
+                handler.emit(record)
+            except Exception as e:
+                # Never let handler errors break logging
+                try:
+                    sys.stderr.write(
+                        f"Error in handler {handler.id} ({type(handler).__name__}): {e}\n"
+                    )
+                except Exception:
+                    # If even this fails, just silently continue
+                    pass
     
     def bind(self, **kwargs) -> 'Logger':
         """Create a bound logger with extra context
