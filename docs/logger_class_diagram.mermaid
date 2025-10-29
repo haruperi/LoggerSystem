@@ -1,0 +1,249 @@
+
+classDiagram
+    %% Core Logger
+    class Logger {
+        -List~Handler~ handlers
+        -Dict~str,Level~ levels
+        -Dict~str,Any~ extra
+        -ExceptionFormatter exception_formatter
+        +add(sink, options) int
+        +remove(handler_id)
+        +trace(message)
+        +debug(message)
+        +info(message)
+        +success(message)
+        +warning(message)
+        +error(message)
+        +critical(message)
+        +log(level, message)
+        +bind(**kwargs) Logger
+        +contextualize(**kwargs) ContextManager
+        +catch(exception) Decorator
+        +opt(exception) Logger
+        +level(name, no, color, icon)
+    }
+
+    %% Handler Hierarchy
+    class Handler {
+        <<abstract>>
+        #int id
+        #Any sink
+        #Formatter formatter
+        #Level level
+        #Callable filter_func
+        #bool colorize
+        #bool serialize
+        +emit(record)*
+        +should_emit(record) bool
+        +format(record) str
+        +close()
+    }
+
+    class FileHandler {
+        -Path path
+        -Rotation rotation
+        -str retention
+        -str compression
+        +rotate()
+        +should_rotate() bool
+        +compress()
+    }
+
+    class StreamHandler {
+        -stream
+        +flush()
+    }
+
+    class CallableHandler {
+        -Callable func
+        +call()
+    }
+
+    class AsyncHandler {
+        -Queue queue
+        -Thread worker_thread
+        -Event stop_event
+        +start_worker()
+        +stop_worker()
+        +worker_loop()
+    }
+
+    %% LogRecord and related
+    class LogRecord {
+        +timedelta elapsed
+        +ExceptionInfo exception
+        +Dict extra
+        +FileInfo file
+        +str function
+        +Level level
+        +int line
+        +str message
+        +str module
+        +ProcessInfo process
+        +ThreadInfo thread
+        +datetime time
+        +to_dict() Dict
+    }
+
+    class Level {
+        +str name
+        +int no
+        +str color
+        +str icon
+    }
+
+    class ExceptionInfo {
+        +Type type
+        +Exception value
+        +traceback
+    }
+
+    class FileInfo {
+        +str name
+        +str path
+    }
+
+    class ProcessInfo {
+        +int id
+        +str name
+    }
+
+    class ThreadInfo {
+        +int id
+        +str name
+    }
+
+    %% Formatting System
+    class Formatter {
+        -str format_string
+        -Colorizer colorizer
+        -List~Token~ tokens
+        +format(record) str
+        +parse_format_string() List
+        +apply_colors(text, record) str
+    }
+
+    class Colorizer {
+        -bool enabled
+        -Dict colors
+        +colorize(text, color) str
+        +strip_colors(text) str
+        +get_level_color(level) str
+    }
+
+    class ExceptionFormatter {
+        -bool colorize
+        -bool backtrace
+        -bool diagnose
+        +format_exception(exc_info) str
+        +format_traceback(tb) str
+        +format_frame(frame) str
+    }
+
+    %% Rotation System
+    class Rotation {
+        <<interface>>
+        +should_rotate(file_path, record) bool
+    }
+
+    class SizeRotation {
+        -int max_size
+        +should_rotate() bool
+    }
+
+    class TimeRotation {
+        -str interval
+        -str when
+        -time at_time
+        +should_rotate() bool
+    }
+
+    class Retention {
+        -int count
+        -timedelta age
+        -int total_size
+        +clean_old_files(directory)
+        +should_delete(file) bool
+    }
+
+    class Compression {
+        -str format
+        +compress(file_path) Path
+    }
+
+    %% Filter System
+    class Filter {
+        <<interface>>
+        +filter(record) bool
+    }
+
+    class LevelFilter {
+        -int min_level
+        -int max_level
+    }
+
+    class ModuleFilter {
+        -List modules
+        -bool exclude
+    }
+
+    %% Context System
+    class ContextManager {
+        -Logger logger
+        -Dict extra
+        +__enter__() Logger
+        +__exit__()
+    }
+
+    class BoundLogger {
+        -Logger parent_logger
+        -Dict bound_extra
+        +bind(**kwargs) BoundLogger
+    }
+
+    %% Utilities
+    class FrameInspector {
+        +get_caller_frame(depth) Frame
+        +extract_frame_info(frame) Dict
+    }
+
+    class Serializer {
+        +serialize(record) str
+        +to_json(record) str
+    }
+
+    %% Relationships
+    Logger "1" --> "*" Handler : manages
+    Logger --> ExceptionFormatter : uses
+    Logger --> FrameInspector : uses
+    Logger --> ContextManager : creates
+    Logger --> BoundLogger : creates
+    
+    Handler <|-- FileHandler : extends
+    Handler <|-- StreamHandler : extends
+    Handler <|-- CallableHandler : extends
+    Handler <|-- AsyncHandler : extends
+    Handler --> Formatter : uses
+    Handler --> Filter : uses
+    Handler --> LogRecord : processes
+    
+    FileHandler --> Rotation : uses
+    FileHandler --> Retention : uses
+    FileHandler --> Compression : uses
+    
+    Rotation <|.. SizeRotation : implements
+    Rotation <|.. TimeRotation : implements
+    
+    Filter <|.. LevelFilter : implements
+    Filter <|.. ModuleFilter : implements
+    
+    Formatter --> Colorizer : uses
+    Handler --> Serializer : uses
+    
+    LogRecord --> Level : contains
+    LogRecord --> ExceptionInfo : contains
+    LogRecord --> FileInfo : contains
+    LogRecord --> ProcessInfo : contains
+    LogRecord --> ThreadInfo : contains
+    
+    ExceptionFormatter --> ExceptionInfo : formats
