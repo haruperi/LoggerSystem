@@ -63,12 +63,17 @@ class Logger:
                 - serialize: JSON serialization (default: False)
                 - mode: File mode for FileHandler (default: 'a')
                 - encoding: File encoding for FileHandler (default: 'utf-8')
+                - rotation: Rotation strategy for FileHandler (default: None)
+                  Can be: size string ("10 MB"), time string ("daily", "1 hour"),
+                  or integer (bytes)
             
         Returns:
             Handler ID for later removal
             
         Example:
             >>> handler_id = logger.add("app.log", level="INFO")
+            >>> logger.add("app.log", rotation="10 MB")  # Rotate when 10MB
+            >>> logger.add("app.log", rotation="daily")  # Rotate daily
             >>> logger.add(sys.stderr, level="ERROR", colorize=True)
             >>> logger.add(lambda msg: print(msg), level="DEBUG")
         """
@@ -98,12 +103,14 @@ class Logger:
                 # File handler
                 mode = options.get('mode', 'a')
                 encoding = options.get('encoding', 'utf-8')
+                rotation = options.get('rotation', None)
                 handler = FileHandler(
                     sink=Path(sink),
                     level=level_obj,
                     formatter=formatter,
                     mode=mode,
                     encoding=encoding,
+                    rotation=rotation,
                     filter_func=filter_func,
                     colorize=colorize or False,
                     serialize=serialize

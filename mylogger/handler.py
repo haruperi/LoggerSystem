@@ -3,8 +3,9 @@ Handler classes for different output destinations
 """
 
 from abc import ABC, abstractmethod
-from typing import Any, Callable, Optional, TextIO
+from typing import Any, Callable, Optional, TextIO, Union
 from pathlib import Path
+from datetime import datetime
 import sys
 import threading
 
@@ -219,6 +220,7 @@ class FileHandler(Handler):
         mode: File open mode ('a' for append, 'w' for write)
         encoding: File encoding (default 'utf-8')
         file_handle: Open file handle
+        rotation: Optional rotation strategy
     """
     
     def __init__(
@@ -229,6 +231,7 @@ class FileHandler(Handler):
         mode: str = 'a',
         encoding: str = 'utf-8',
         buffering: int = 1,  # Line buffered
+        rotation: Optional[Union[str, int, 'Rotation']] = None,
         **options
     ):
         """Initialize file handler
@@ -240,6 +243,12 @@ class FileHandler(Handler):
             mode: File open mode ('a' or 'w')
             encoding: File encoding
             buffering: Buffering mode (1 = line buffered)
+            rotation: Rotation strategy. Can be:
+                - None: No rotation (default)
+                - str: Time-based rotation (e.g., "1 hour", "daily", "12:00")
+                - int: Size-based rotation in bytes
+                - str: Size-based rotation (e.g., "10 MB", "500 KB")
+                - Rotation: Custom rotation strategy instance
             **options: Additional handler options
         """
         super().__init__(sink, level, formatter, **options)
@@ -248,12 +257,68 @@ class FileHandler(Handler):
         self.encoding: str = encoding
         self.buffering: int = buffering
         self.file_handle: Optional[TextIO] = None
+        self.rotation: Optional['Rotation'] = self._parse_rotation(rotation)
         
         # Create parent directories if needed
         self.path.parent.mkdir(parents=True, exist_ok=True)
         
         # Open the file
         self._open_file()
+    
+    def _parse_rotation(self, rotation: Optional[Union[str, int, 'Rotation']]) -> Optional['Rotation']:
+        """Parse rotation parameter into a Rotation instance
+        
+        Args:
+            rotation: Rotation specification
+            
+        Returns:
+            Rotation instance or None
+        """
+        if rotation is None:
+            return None
+        
+        # Already a Rotation instance
+        from .rotation import Rotation, SizeRotation, TimeRotation
+        if isinstance(rotation, Rotation):
+            return rotation
+        
+        # Integer or size string -> SizeRotation
+        if isinstance(rotation, int):
+            return SizeRotation(rotation)
+        
+        if isinstance(rotation, str):
+            # Try to determine if it's a size or time specification
+            # Size specifications contain size units: KB, MB, GB, etc.
+            size_units = ['B', 'KB', 'MB', 'GB', 'TB', 'K', 'M', 'G', 'T']
+            upper_rotation = rotation.upper()
+            
+            # Check if it looks like a size specification
+            is_size = any(unit in upper_rotation for unit in size_units)
+            
+            if is_size:
+                try:
+                    return SizeRotation(rotation)
+                except (ValueError, TypeError):
+                    # If size parsing fails, try time rotation
+                    pass
+            
+            # Try time rotation
+            try:
+                return TimeRotation(rotation)
+            except ValueError:
+                # Last attempt: try size rotation
+                try:
+                    return SizeRotation(rotation)
+                except (ValueError, TypeError):
+                    raise ValueError(
+                        f"Invalid rotation specification: '{rotation}'. "
+                        "Expected size (e.g., '10 MB'), time interval (e.g., '1 hour'), "
+                        "or schedule (e.g., 'daily', '12:00')."
+                    )
+        
+        raise TypeError(
+            f"rotation must be None, int, str, or Rotation instance, got {type(rotation)}"
+        )
     
     def _should_colorize(self) -> bool:
         """Files should not have colors by default
@@ -276,8 +341,58 @@ class FileHandler(Handler):
             sys.stderr.write(f"Error opening log file {self.path}: {e}\n")
             raise
     
+    def _rotate(self) -> None:
+        """Perform file rotation
+        
+        This method:
+        1. Closes the current file
+        2. Renames it with a timestamp
+        3. Opens a new file with the original name
+        4. Resets the rotation strategy
+        """
+        try:
+            # Close current file
+            if self.file_handle is not None:
+                self.file_handle.flush()
+                self.file_handle.close()
+                self.file_handle = None
+            
+            # Generate rotated filename with timestamp (including microseconds for uniqueness)
+            now = datetime.now()
+            timestamp = now.strftime("%Y-%m-%d_%H-%M-%S") + f"-{now.microsecond:06d}"
+            
+            # Get file parts
+            stem = self.path.stem  # Filename without extension
+            suffix = self.path.suffix  # Extension including the dot
+            parent = self.path.parent
+            
+            # Create rotated filename: app.log -> app.2024-01-15_14-30-45.log
+            rotated_path = parent / f"{stem}.{timestamp}{suffix}"
+            
+            # Rename current file to rotated name
+            if self.path.exists():
+                self.path.rename(rotated_path)
+            
+            # Reset rotation strategy
+            if self.rotation:
+                self.rotation.reset()
+            
+            # Open new file
+            self._open_file()
+            
+        except Exception as e:
+            sys.stderr.write(f"Error during file rotation: {e}\n")
+            # Try to reopen the original file even if rotation failed
+            if self.file_handle is None:
+                try:
+                    self._open_file()
+                except Exception:
+                    pass
+    
     def emit(self, record: 'LogRecord') -> None:
         """Write formatted record to file
+        
+        Checks if rotation is needed before writing.
         
         Args:
             record: LogRecord to emit
@@ -287,14 +402,23 @@ class FileHandler(Handler):
         
         try:
             with self._lock:
+                # Check if rotation is needed
+                if self.rotation and self.rotation.should_rotate(self.path, record):
+                    self._rotate()
+                
+                # Ensure file is open
                 if self.file_handle is None:
                     self._open_file()
                 
+                # Write the record
                 formatted = self.format(record)
                 self.file_handle.write(formatted + '\n')
                 self.file_handle.flush()
         except Exception as e:
-            sys.stderr.write(f"Error in FileHandler: {e}\n")
+            if self.catch:
+                sys.stderr.write(f"Error in FileHandler: {e}\n")
+            else:
+                raise
     
     def close(self) -> None:
         """Close the file handle"""
