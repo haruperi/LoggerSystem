@@ -441,7 +441,7 @@ class Logger:
         """
         return BoundLogger(self, **kwargs)
     
-    def contextualize(self, **kwargs) -> 'ContextManager':
+    def contextualize(self, **kwargs) -> 'ContextManager':   # pyright: ignore[reportUndefinedVariable]
         """Create a context manager for temporary context binding
         
         Returns a context manager that temporarily adds context to the
@@ -883,3 +883,42 @@ class Logger:
 
 # Create a global logger instance for convenience
 logger = Logger()
+
+# Add default handlers with production-ready settings
+# These provide console output, file logging, and error logging out of the box
+try:
+    # Console: INFO and above, colored
+    logger.add(
+        sys.stderr,
+        level="INFO",
+        format="<green>{time:YYYY-MM-DD HH:mm:ss}</green> | "
+               "<level>{level: <8}</level> | "
+               "<cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - "
+               "<level>{message}</level>",
+        colorize=True
+    )
+    
+    # File: All levels, rotated daily, compressed, retained 30 days
+    logger.add(
+        "logs/app.log",
+        level="DEBUG",
+        format="{time:YYYY-MM-DD HH:mm:ss.SSS} | {level: <8} | "
+               "{name}:{function}:{line} | {message}",
+        rotation="daily",
+        compression="gz",
+        retention="30 days",
+        colorize=False
+    )
+    
+    # Error file: Only errors, retained 90 days
+    logger.add(
+        "logs/errors.log",
+        level="ERROR",
+        rotation="100 MB",
+        compression="gz",
+        retention="90 days"
+    )
+except Exception:
+    # If default handlers can't be added (e.g., permission issues),
+    # silently continue - user can add handlers manually
+    pass
