@@ -15,6 +15,7 @@ from .utils import FrameInspector
 from .exceptions import InvalidLevelError, HandlerNotFoundError
 from .handler import Handler, StreamHandler, FileHandler, CallableHandler
 from .formatter import Formatter
+from .bound_logger import BoundLogger
 from pathlib import Path
 
 
@@ -307,6 +308,55 @@ class Logger:
         
         self._log("ERROR", message, *args, **kwargs)
     
+    def bind(self, **kwargs) -> BoundLogger:
+        """Create a bound logger with contextual information
+        
+        Returns a BoundLogger that automatically includes the provided
+        context in all log records. This is useful for adding request IDs,
+        user information, or any contextual data.
+        
+        Args:
+            **kwargs: Key-value pairs to bind as context
+            
+        Returns:
+            BoundLogger instance with bound context
+            
+        Example:
+            >>> logger = Logger()
+            >>> request_logger = logger.bind(request_id="REQ-123", user="alice")
+            >>> request_logger.info("Processing request")
+            # Log will include request_id and user in extra
+            
+            >>> # Chaining is supported
+            >>> op_logger = request_logger.bind(operation="checkout")
+            >>> op_logger.info("Starting checkout")
+            # Log includes request_id, user, and operation
+        """
+        return BoundLogger(self, **kwargs)
+    
+    def contextualize(self, **kwargs) -> 'ContextManager':
+        """Create a context manager for temporary context binding
+        
+        Returns a context manager that temporarily adds context to the
+        logger's global extra dict. The context is automatically removed
+        when exiting the context.
+        
+        Args:
+            **kwargs: Key-value pairs to add as temporary context
+            
+        Returns:
+            ContextManager instance for use in with statement
+            
+        Example:
+            >>> logger = Logger()
+            >>> with logger.contextualize(request_id="REQ-123"):
+            ...     logger.info("Processing")  # Includes request_id
+            ...     logger.info("Done")  # Includes request_id
+            >>> logger.info("After context")  # No request_id
+        """
+        from .context_manager import ContextManager
+        return ContextManager(self, **kwargs)
+    
     def log(self, level: Union[str, int], message: str, *args, **kwargs) -> None:
         """Log a message at the specified level
         
@@ -414,8 +464,15 @@ class Logger:
         elapsed = datetime.now() - self.start_time
         
         # Merge extra context
+        # Priority: kwargs['extra'] > self.extra (global logger extra)
         record_extra = self.extra.copy()
-        record_extra.update(kwargs)
+        if 'extra' in kwargs:
+            # Merge with extra from kwargs
+            record_extra.update(kwargs.pop('extra'))
+        else:
+            # If no 'extra' in kwargs, add remaining kwargs as extra
+            # (for backward compatibility)
+            record_extra.update(kwargs)
         
         # Create the log record
         record = LogRecord(
@@ -568,29 +625,6 @@ class Logger:
                     # If even this fails, just silently continue
                     pass
     
-    def bind(self, **kwargs) -> 'Logger':
-        """Create a bound logger with extra context
-        
-        Args:
-            **kwargs: Extra context to bind
-            
-        Returns:
-            BoundLogger instance (will be implemented in Day 14)
-        """
-        # TODO: Implement bind (Day 14)
-        raise NotImplementedError("bind() will be implemented in Day 14")
-    
-    def contextualize(self, **kwargs):
-        """Create a context manager with extra context
-        
-        Args:
-            **kwargs: Extra context for the context manager
-            
-        Returns:
-            ContextManager instance (will be implemented in Day 14)
-        """
-        # TODO: Implement contextualize (Day 14)
-        raise NotImplementedError("contextualize() will be implemented in Day 14")
     
     def catch(self, exception=Exception, **kwargs):
         """Decorator to catch exceptions
