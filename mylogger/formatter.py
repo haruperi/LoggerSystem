@@ -13,6 +13,7 @@ import re
 import os
 from datetime import datetime
 from .constants import COLORS, BG_COLORS
+from .exception_formatter import ExceptionFormatter
 
 
 class Token:
@@ -210,17 +211,32 @@ class Formatter:
         tokens: Parsed list of tokens
     """
     
-    def __init__(self, format_string: str = None, colorize: bool = False):
+    def __init__(
+        self,
+        format_string: str = None,
+        colorize: bool = False,
+        backtrace: bool = True,
+        diagnose: bool = False
+    ):
         """Initialize formatter
         
         Args:
             format_string: Format template (if None, use default)
             colorize: Enable colorization
+            backtrace: Show full exception traceback (if False, only show exception message)
+            diagnose: Show local variables in exception frames
         """
         self.format_string = format_string or self._default_format()
         self.colorize = colorize
+        self.backtrace = backtrace
+        self.diagnose = diagnose
         self.tokens: List[Token] = []
         self.colorizer = Colorizer()
+        self.exception_formatter = ExceptionFormatter(
+            colorize=colorize,
+            backtrace=backtrace,
+            diagnose=diagnose
+        )
         self._parse_format_string()
     
     def _default_format(self) -> str:
@@ -365,6 +381,18 @@ class Formatter:
             # Apply colors if enabled
             if self.colorize:
                 formatted_text = self._apply_colors(formatted_text, record)
+            
+            # Append exception information if present
+            if record.exception:
+                # Convert ExceptionInfo to tuple format expected by formatter
+                exc_tuple = (
+                    record.exception.type,
+                    record.exception.value,
+                    record.exception.traceback
+                )
+                exception_text = self.exception_formatter.format_exception(exc_tuple)
+                if exception_text:
+                    formatted_text += "\n" + exception_text
             
             return formatted_text
             

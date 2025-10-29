@@ -61,6 +61,8 @@ class Logger:
                 - filter: Filter function (default: None)
                 - colorize: Enable colors (default: auto-detect)
                 - serialize: JSON serialization (default: False)
+                - backtrace: Show full exception traceback (default: True)
+                - diagnose: Show variable values in exception frames (default: False)
                 - mode: File mode for FileHandler (default: 'a')
                 - encoding: File encoding for FileHandler (default: 'utf-8')
                 - rotation: Rotation strategy for FileHandler (default: None)
@@ -91,6 +93,8 @@ class Logger:
             filter_func = options.get('filter', None)
             colorize = options.get('colorize', None)
             serialize = options.get('serialize', False)
+            backtrace = options.get('backtrace', True)
+            diagnose = options.get('diagnose', False)
             
             # Get Level object
             if isinstance(level, str):
@@ -101,7 +105,12 @@ class Logger:
                 level_obj = level  # Assume it's already a Level object
             
             # Create formatter
-            formatter = Formatter(format_string=format_string, colorize=colorize or False)
+            formatter = Formatter(
+                format_string=format_string,
+                colorize=colorize or False,
+                backtrace=backtrace,
+                diagnose=diagnose
+            )
             
             # Determine handler type and create handler
             handler = None
@@ -273,6 +282,30 @@ class Logger:
             **kwargs: Keyword arguments for formatting or extra context
         """
         self._log("CRITICAL", message, *args, **kwargs)
+    
+    def exception(self, message: str, *args, **kwargs) -> None:
+        """Log an exception with traceback
+        
+        This is a convenience method that logs at ERROR level and automatically
+        captures the current exception information from sys.exc_info().
+        Should be called from within an except block.
+        
+        Args:
+            message: Log message (may contain format placeholders)
+            *args: Positional arguments for formatting
+            **kwargs: Keyword arguments for formatting or extra context
+            
+        Example:
+            >>> try:
+            ...     result = 1 / 0
+            ... except:
+            ...     logger.exception("Division failed!")
+        """
+        # Add exception info to kwargs if not already present
+        if 'exception' not in kwargs:
+            kwargs['exception'] = True  # Signal to capture current exception
+        
+        self._log("ERROR", message, *args, **kwargs)
     
     def log(self, level: Union[str, int], message: str, *args, **kwargs) -> None:
         """Log a message at the specified level
