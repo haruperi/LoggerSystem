@@ -159,7 +159,28 @@ class ExceptionInfo:
 
 @dataclass
 class LogRecord:
-    """Complete log record with all context"""
+    """Complete log record with all context information
+    
+    This class represents a single log entry with complete context about
+    where, when, and why the log was created. It includes information about
+    the source code location, process/thread, timing, and any additional
+    contextual data.
+    
+    Attributes:
+        elapsed: Time elapsed since logger initialization
+        exception: Exception information if logging an exception
+        extra: Additional context data (custom fields)
+        file: File information where log originated
+        function: Function name where log was called
+        level: Log level (INFO, ERROR, etc.)
+        line: Line number where log was called
+        message: The formatted log message
+        module: Module name where log originated
+        name: Logger name (e.g., '__main__', 'myapp.module')
+        process: Process information (PID, name)
+        thread: Thread information (ID, name)
+        time: Timestamp when log was created
+    """
     elapsed: timedelta
     exception: Optional[ExceptionInfo]
     extra: Dict[str, Any]
@@ -175,6 +196,85 @@ class LogRecord:
     time: datetime
     
     def to_dict(self) -> Dict[str, Any]:
-        """Convert record to dictionary"""
-        # TODO: Implement serialization
-        return {}
+        """Convert record to dictionary for serialization
+        
+        This method converts the LogRecord to a dictionary format suitable
+        for JSON serialization or other structured output formats.
+        
+        Returns:
+            Dictionary with all record fields as key-value pairs
+            
+        Example:
+            >>> record = LogRecord(...)
+            >>> data = record.to_dict()
+            >>> print(data['level']['name'])  # 'INFO'
+            >>> print(data['message'])  # 'User logged in'
+        """
+        result = {
+            'elapsed': {
+                'seconds': self.elapsed.total_seconds(),
+                'repr': str(self.elapsed),
+            },
+            'exception': None,
+            'extra': self.extra.copy(),
+            'file': {
+                'name': self.file.name,
+                'path': self.file.path,
+            },
+            'function': self.function,
+            'level': {
+                'name': self.level.name,
+                'no': self.level.no,
+                'icon': self.level.icon,
+            },
+            'line': self.line,
+            'message': self.message,
+            'module': self.module,
+            'name': self.name,
+            'process': {
+                'id': self.process.id,
+                'name': self.process.name,
+            },
+            'thread': {
+                'id': self.thread.id,
+                'name': self.thread.name,
+            },
+            'time': {
+                'timestamp': self.time.timestamp(),
+                'repr': self.time.isoformat(),
+            },
+        }
+        
+        # Add exception info if present
+        if self.exception:
+            result['exception'] = {
+                'type': self.exception.type.__name__,
+                'value': str(self.exception.value),
+                'traceback': self.exception.traceback is not None,
+            }
+        
+        return result
+    
+    def __repr__(self) -> str:
+        """Return detailed representation for debugging
+        
+        Returns:
+            String representation showing key fields
+        """
+        return (
+            f"LogRecord("
+            f"level={self.level.name}, "
+            f"message={self.message!r}, "
+            f"time={self.time.isoformat()}, "
+            f"file={self.file.name}, "
+            f"function={self.function}, "
+            f"line={self.line})"
+        )
+    
+    def __str__(self) -> str:
+        """Return simple string representation
+        
+        Returns:
+            Formatted log message with basic context
+        """
+        return f"[{self.level.name}] {self.message}"
