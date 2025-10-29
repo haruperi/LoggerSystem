@@ -29,7 +29,7 @@ Phase 5: Testing & Polish (Days 15-20)
 
 - [ ] **1.1 Project Setup**
 
-  - [X] Create project directory structure:
+  - [x] Create project directory structure:
     ```
     mylogger/
     ├── __init__.py
@@ -55,40 +55,53 @@ Phase 5: Testing & Polish (Days 15-20)
     README.md
     setup.py
     ```
-  - [X] Initialize git repository
-  - [X] Create virtual environment
-  - [X] Set up .gitignore
-- [ ] **1.2 Define Core Data Structures**
+  - [x] Initialize git repository
+  - [x] Create virtual environment
+  - [x] Set up .gitignore
 
-  - [ ] Create `Level` class
-    - [ ] name: str
-    - [ ] no: int (numeric level)
-    - [ ] color: str (ANSI color code)
-    - [ ] icon: str
-    - [ ] __eq__, __lt__, __hash__ methods
-  - [ ] Define default levels:
-    - [ ] TRACE (5)
-    - [ ] DEBUG (10)
-    - [ ] INFO (20)
-    - [ ] SUCCESS (25)
-    - [ ] WARNING (30)
-    - [ ] ERROR (40)
-    - [ ] CRITICAL (50)
-- [ ] **1.3 Create Supporting Info Classes**
+- [x] **1.2 Define Core Data Structures**
 
-  - [ ] `FileInfo` dataclass
-    - [ ] name: str
-    - [ ] path: str
-  - [ ] `ProcessInfo` dataclass
-    - [ ] id: int
-    - [ ] name: str
-  - [ ] `ThreadInfo` dataclass
-    - [ ] id: int
-    - [ ] name: str
-  - [ ] `ExceptionInfo` dataclass
-    - [ ] type: Type
-    - [ ] value: Exception
-    - [ ] traceback: TracebackType
+  - [x] Create `Level` class
+    - [x] name: str
+    - [x] no: int (numeric level)
+    - [x] color: str (ANSI color code)
+    - [x] icon: str
+    - [x] **eq**, **lt**, **hash** methods
+    - [x] **le**, **gt**, **ge** methods (bonus)
+    - [x] **repr**, **str** methods (bonus)
+  - [x] Define default levels:
+    - [x] TRACE (5)
+    - [x] DEBUG (10)
+    - [x] INFO (20)
+    - [x] SUCCESS (25)
+    - [x] WARNING (30)
+    - [x] ERROR (40)
+    - [x] CRITICAL (50)
+
+- [x] **1.3 Create Supporting Info Classes**
+
+  - [x] `FileInfo` dataclass
+    - [x] name: str
+    - [x] path: str
+    - [x] frozen=True (immutable/hashable)
+    - [x] `__repr__` and `__str__` methods
+    - [x] `pathlib` property for Path object
+  - [x] `ProcessInfo` dataclass
+    - [x] id: int
+    - [x] name: str
+    - [x] frozen=True (immutable/hashable)
+    - [x] `__repr__` and `__str__` methods
+  - [x] `ThreadInfo` dataclass
+    - [x] id: int
+    - [x] name: str
+    - [x] frozen=True (immutable/hashable)
+    - [x] `__repr__` and `__str__` methods
+  - [x] `ExceptionInfo` dataclass
+    - [x] type: Type[BaseException]
+    - [x] value: BaseException
+    - [x] traceback: Optional[TracebackType]
+    - [x] frozen=True (immutable/hashable)
+    - [x] `__repr__` and `__str__` methods
 
 **Deliverables**: Basic project structure, Level class, info classes
 
@@ -109,6 +122,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Extract module name
     - [ ] Get code context (5 lines around current line)
   - [ ] Add error handling for missing frames
+
 - [ ] **2.2 LogRecord Class**
 
   - [ ] Create `LogRecord` class in record.py
@@ -143,6 +157,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Default format string
   - [ ] Level name to number mapping
   - [ ] Default datetime format patterns
+
 - [ ] **3.2 Time Utilities**
 
   - [ ] Create `TimeUtils` class
@@ -157,6 +172,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] `format_time(dt: datetime, fmt: str)` method
     - [ ] Support custom format tokens (YYYY, MM, DD, HH, mm, ss)
     - [ ] Convert to Python's strftime format
+
 - [ ] **3.3 Custom Exceptions**
 
   - [ ] `LoggerError` base exception
@@ -183,9 +199,10 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] levels: Dict[str, Level] = default levels
     - [ ] extra: Dict[str, Any] = {}
     - [ ] start_time: datetime = now
-    - [ ] _handler_id_counter: int = 0
-    - [ ] _lock: threading.Lock
+    - [ ] \_handler_id_counter: int = 0
+    - [ ] \_lock: threading.Lock
   - [ ] Make Logger a singleton or provide global instance
+
 - [ ] **4.2 Core Logging Methods**
 
   - [ ] `_log(level: Union[str, int], message: str, *args, **kwargs)` internal method
@@ -204,6 +221,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] `error(message, *args, **kwargs)`
     - [ ] `critical(message, *args, **kwargs)`
   - [ ] `log(level, message, *args, **kwargs)` public method
+
 - [ ] **4.3 Message Formatting**
 
   - [ ] Support format strings: `logger.info("User {name}", name="John")`
@@ -240,6 +258,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Apply filter function if present
   - [ ] `format(record: LogRecord) -> str` method
   - [ ] `close()` method
+
 - [ ] **5.2 Logger Handler Management**
 
   - [ ] `add(sink, **options) -> int` method
@@ -253,6 +272,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Call handler.close()
     - [ ] Remove from handlers list
   - [ ] Thread-safe handler operations
+
 - [ ] **5.3 Handler Options Parsing**
 
   - [ ] Parse and validate options in `add()`:
@@ -282,6 +302,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Support field access: `{time}`, `{level}`, `{message}`, `{function}`, etc.
   - [ ] Support nested access: `{record.level.name}`, `{extra.user_id}`
   - [ ] Support format specs: `{level: <8}`, `{time:YYYY-MM-DD}`
+
 - [ ] **6.2 Format Token Parsing**
 
   - [ ] Create `Token` class
@@ -292,6 +313,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] `parse_format_string(format_str: str) -> List[Token]`
     - [ ] Use regex or manual parsing
     - [ ] Handle escaped braces `{{` and `}}`
+
 - [ ] **6.3 Record Field Access**
 
   - [ ] `get_field_value(record: LogRecord, field_name: str) -> Any`
@@ -300,6 +322,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Extra dict access: `extra.request_id`
   - [ ] Apply format spec to value
   - [ ] Handle missing fields gracefully
+
 - [ ] **6.4 Default Format**
 
   - [ ] Define default format string
@@ -326,6 +349,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Implement `close()` method
     - [ ] Flush stream
     - [ ] Don't close stdout/stderr
+
 - [ ] **7.2 Console Output**
 
   - [ ] Default to sys.stderr for console output
@@ -357,12 +381,14 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Flush buffer
     - [ ] Close file handle
     - [ ] Set file handle to None
+
 - [ ] **8.2 File Path Handling**
 
   - [ ] Convert string paths to Path objects
   - [ ] Create parent directories if needed
   - [ ] Handle relative and absolute paths
   - [ ] Validate write permissions
+
 - [ ] **8.3 Thread Safety**
 
   - [ ] Add lock for file writes
@@ -393,12 +419,14 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] WARNING: yellow
     - [ ] ERROR: red
     - [ ] CRITICAL: bold red
+
 - [ ] **9.2 Color Tags in Format String**
 
   - [ ] Parse color tags: `<red>text</red>`, `<green>text</green>`
   - [ ] Parse level tag: `<level>text</level>` (uses level's color)
   - [ ] Convert tags to ANSI codes
   - [ ] `strip_colors(text: str)` method for non-TTY output
+
 - [ ] **9.3 Smart Colorization**
 
   - [ ] Auto-detect TTY capability
@@ -422,6 +450,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Format or serialize record
     - [ ] Call the function with formatted output
     - [ ] Handle exceptions in callable
+
 - [ ] **10.2 Serializer**
 
   - [ ] Create `Serializer` class in utils.py
@@ -432,7 +461,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] datetime → ISO format string
     - [ ] timedelta → seconds
     - [ ] Exception → string representation
-    - [ ] Custom objects → __repr__
+    - [ ] Custom objects → **repr**
+
 - [ ] **10.3 Integration**
 
   - [ ] Add serialize option to handlers
@@ -453,6 +483,7 @@ Phase 5: Testing & Polish (Days 15-20)
 
   - [ ] Create `Rotation` abstract class
   - [ ] Abstract method: `should_rotate(file_path, record) -> bool`
+
 - [ ] **11.2 SizeRotation Class**
 
   - [ ] Implement size-based rotation
@@ -460,6 +491,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Track current file size
   - [ ] Check if size exceeds threshold
   - [ ] `should_rotate()` returns True when size exceeded
+
 - [ ] **11.3 TimeRotation Class**
 
   - [ ] Implement time-based rotation
@@ -470,6 +502,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Track last rotation time
   - [ ] Calculate next rotation time
   - [ ] `should_rotate()` returns True when time reached
+
 - [ ] **11.4 Rotation in FileHandler**
 
   - [ ] Add rotation parameter to FileHandler
@@ -498,6 +531,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Use standard library (gzip, zipfile)
   - [ ] Delete original file after compression
   - [ ] Return path to compressed file
+
 - [ ] **12.2 Retention Class**
 
   - [ ] Create `Retention` class
@@ -509,6 +543,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Find rotated log files
     - [ ] Sort by modification time
     - [ ] Delete files based on policy
+
 - [ ] **12.3 Integration**
 
   - [ ] Add compression and retention parameters to FileHandler
@@ -532,6 +567,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] colorize: bool
     - [ ] backtrace: bool (show full trace vs truncated)
     - [ ] diagnose: bool (show variables)
+
 - [ ] **13.2 Basic Exception Formatting**
 
   - [ ] `format_exception(exc_info) -> str` method
@@ -541,6 +577,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Function name
     - [ ] Line number
     - [ ] Code line (if available)
+
 - [ ] **13.3 Diagnose Mode**
 
   - [ ] `get_context_lines(filename, lineno) -> List[str]`
@@ -550,12 +587,14 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Extract local variables from frame
   - [ ] Format variables in readable way
   - [ ] Add to exception output
+
 - [ ] **13.4 Colorization**
 
   - [ ] Color exception type (red)
   - [ ] Color file paths (cyan)
   - [ ] Color function names (blue)
   - [ ] Highlight error line (bold red)
+
 - [ ] **13.5 Integration**
 
   - [ ] Capture exception info in LogRecord
@@ -575,6 +614,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Logger.extra dict for global context
   - [ ] Merge extra into LogRecord.extra
   - [ ] Support nested extra updates
+
 - [ ] **14.2 BoundLogger Class**
 
   - [ ] Create `BoundLogger` class
@@ -583,12 +623,14 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Implement all logging methods (trace, debug, info, etc.)
   - [ ] Merge bound_extra into every log call
   - [ ] Support chaining: `logger.bind(a=1).bind(b=2)`
+
 - [ ] **14.3 Logger.bind() Method**
 
   - [ ] `bind(**kwargs) -> BoundLogger`
   - [ ] Create BoundLogger instance
   - [ ] Pass current logger and kwargs
   - [ ] Return BoundLogger
+
 - [ ] **14.4 ContextManager**
 
   - [ ] Create `ContextManager` class
@@ -598,6 +640,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Return logger
   - [ ] `__exit__()` method:
     - [ ] Restore previous Logger.extra
+
 - [ ] **14.5 Logger.contextualize() Method**
 
   - [ ] `contextualize(**kwargs) -> ContextManager`
@@ -619,6 +662,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Filter as callable: `Callable[[LogRecord], bool]`
   - [ ] Pass filter function to handler
   - [ ] Apply in `Handler.should_emit()`
+
 - [ ] **15.2 Built-in Filters**
 
   - [ ] `LevelFilter` class
@@ -628,6 +672,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Accept list of module names
     - [ ] exclude flag (include or exclude)
     - [ ] Match record.module against list
+
 - [ ] **15.3 Filter Examples**
 
   - [ ] Create example filter functions
@@ -651,6 +696,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Wrap function in try/except
   - [ ] Log exception with Logger
   - [ ] Optionally reraise
+
 - [ ] **16.2 logger.opt() Method**
 
   - [ ] Return modified logger instance
@@ -661,6 +707,7 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] lazy: bool - defer evaluation
   - [ ] Create temporary logger wrapper
   - [ ] Apply options to next log call only
+
 - [ ] **16.3 Level Management**
 
   - [ ] `add_level(name, no, color, icon)` method
@@ -691,12 +738,14 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Dequeue records
     - [ ] Pass to wrapped handler
     - [ ] Handle errors
+
 - [ ] **17.2 Queue Management**
 
   - [ ] Set max queue size
   - [ ] Handle full queue (block, drop, or raise)
   - [ ] Graceful shutdown
   - [ ] Flush queue on close
+
 - [ ] **17.3 Integration**
 
   - [ ] Add enqueue parameter to Logger.add()
@@ -717,17 +766,20 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Test message formatting with args/kwargs
   - [ ] Test level filtering
   - [ ] Test handler addition/removal
+
 - [ ] **18.2 Test Handlers**
 
   - [ ] Test StreamHandler output
   - [ ] Test FileHandler file creation and writing
   - [ ] Test CallableHandler execution
+
 - [ ] **18.3 Test Formatters**
 
   - [ ] Test format string parsing
   - [ ] Test field extraction
   - [ ] Test format specs
   - [ ] Test colorization
+
 - [ ] **18.4 Test LogRecord**
 
   - [ ] Test record creation
@@ -748,24 +800,28 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Test time-based rotation
   - [ ] Test file naming
   - [ ] Test multiple rotations
+
 - [ ] **19.2 Test Compression & Retention**
 
   - [ ] Test gzip compression
   - [ ] Test retention by count
   - [ ] Test retention by age
   - [ ] Test retention by size
+
 - [ ] **19.3 Test Context & Binding**
 
   - [ ] Test bind() method
   - [ ] Test contextualize() context manager
   - [ ] Test extra field merging
   - [ ] Test nested contexts
+
 - [ ] **19.4 Test Exception Formatting**
 
   - [ ] Test basic exception formatting
   - [ ] Test diagnose mode
   - [ ] Test backtrace
   - [ ] Test nested exceptions
+
 - [ ] **19.5 Test Filters & Decorators**
 
   - [ ] Test filter functions
@@ -789,6 +845,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Document utility functions
   - [ ] Add type hints to all public methods
   - [ ] Generate API docs (Sphinx or mkdocs)
+
 - [ ] **20.2 User Guide**
 
   - [ ] Quick start guide
@@ -797,6 +854,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Configuration guide
   - [ ] Performance tips
   - [ ] Troubleshooting
+
 - [ ] **20.3 Example Scripts**
 
   - [ ] Basic logging example
@@ -805,6 +863,7 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Exception catching example
   - [ ] Custom handler example
   - [ ] Multi-handler configuration
+
 - [ ] **20.4 README**
 
   - [ ] Project description
@@ -832,6 +891,7 @@ Phase 5: Testing & Polish (Days 15-20)
        with self._lock:
            self.handlers.append(handler)
    ```
+
 2. **Frame Inspection Depth**
 
    ```python
@@ -840,6 +900,7 @@ Phase 5: Testing & Polish (Days 15-20)
    # Need to go back 3+ frames
    frame = sys._getframe(depth)
    ```
+
 3. **Message Formatting**
 
    ```python
@@ -847,6 +908,7 @@ Phase 5: Testing & Polish (Days 15-20)
    logger.info("User {name}", name="John")  # kwargs
    logger.info("User {}", "John")  # positional
    ```
+
 4. **File Rotation Atomicity**
 
    ```python
@@ -856,6 +918,7 @@ Phase 5: Testing & Polish (Days 15-20)
    3. Open new file
    # Don't lose logs during rotation
    ```
+
 5. **Exception Handling in Handlers**
 
    ```python
@@ -929,7 +992,7 @@ logger.info("Hello {name}", name="World")
 **Test**: Can run in production with rotation, compression, retention
 
 ```python
-logger.add("app.log", 
+logger.add("app.log",
     rotation="100 MB",
     compression="gz",
     retention="10 days"
