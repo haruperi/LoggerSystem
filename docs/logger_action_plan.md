@@ -28,7 +28,8 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: CRITICAL**
 
 - [ ] **1.1 Project Setup**
-  - [ ] Create project directory structure:
+
+  - [X] Create project directory structure:
     ```
     mylogger/
     ├── __init__.py
@@ -54,11 +55,11 @@ Phase 5: Testing & Polish (Days 15-20)
     README.md
     setup.py
     ```
-  - [ ] Initialize git repository
-  - [ ] Create virtual environment
-  - [ ] Set up .gitignore
-
+  - [X] Initialize git repository
+  - [X] Create virtual environment
+  - [X] Set up .gitignore
 - [ ] **1.2 Define Core Data Structures**
+
   - [ ] Create `Level` class
     - [ ] name: str
     - [ ] no: int (numeric level)
@@ -73,8 +74,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] WARNING (30)
     - [ ] ERROR (40)
     - [ ] CRITICAL (50)
-
 - [ ] **1.3 Create Supporting Info Classes**
+
   - [ ] `FileInfo` dataclass
     - [ ] name: str
     - [ ] path: str
@@ -98,6 +99,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: CRITICAL**
 
 - [ ] **2.1 Frame Inspector Utility**
+
   - [ ] Create `FrameInspector` class in utils.py
   - [ ] `get_caller_frame(depth: int)` method
     - [ ] Use `sys._getframe()` or `inspect.currentframe()`
@@ -107,8 +109,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Extract module name
     - [ ] Get code context (5 lines around current line)
   - [ ] Add error handling for missing frames
-
 - [ ] **2.2 LogRecord Class**
+
   - [ ] Create `LogRecord` class in record.py
   - [ ] Add all required fields:
     - [ ] elapsed: timedelta (from logger start time)
@@ -136,12 +138,13 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **3.1 Constants File**
+
   - [ ] ANSI color codes dictionary
   - [ ] Default format string
   - [ ] Level name to number mapping
   - [ ] Default datetime format patterns
-
 - [ ] **3.2 Time Utilities**
+
   - [ ] Create `TimeUtils` class
   - [ ] `parse_duration(duration: str)` method
     - [ ] Parse "10 seconds", "5 minutes", "2 hours", "1 day"
@@ -154,8 +157,8 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] `format_time(dt: datetime, fmt: str)` method
     - [ ] Support custom format tokens (YYYY, MM, DD, HH, mm, ss)
     - [ ] Convert to Python's strftime format
-
 - [ ] **3.3 Custom Exceptions**
+
   - [ ] `LoggerError` base exception
   - [ ] `HandlerNotFoundError`
   - [ ] `InvalidLevelError`
@@ -173,6 +176,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: CRITICAL**
 
 - [ ] **4.1 Logger Class Foundation**
+
   - [ ] Create `Logger` class in logger.py
   - [ ] Initialize instance variables:
     - [ ] handlers: List[Handler] = []
@@ -182,8 +186,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] _handler_id_counter: int = 0
     - [ ] _lock: threading.Lock
   - [ ] Make Logger a singleton or provide global instance
-
 - [ ] **4.2 Core Logging Methods**
+
   - [ ] `_log(level: Union[str, int], message: str, *args, **kwargs)` internal method
     - [ ] Validate level
     - [ ] Create LogRecord
@@ -200,8 +204,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] `error(message, *args, **kwargs)`
     - [ ] `critical(message, *args, **kwargs)`
   - [ ] `log(level, message, *args, **kwargs)` public method
-
 - [ ] **4.3 Message Formatting**
+
   - [ ] Support format strings: `logger.info("User {name}", name="John")`
   - [ ] Support positional args: `logger.info("User {}", "John")`
   - [ ] Support mixed args and kwargs
@@ -216,6 +220,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: CRITICAL**
 
 - [ ] **5.1 Handler Base Class**
+
   - [ ] Create `Handler` abstract base class in handler.py
   - [ ] Add attributes:
     - [ ] id: int
@@ -235,8 +240,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Apply filter function if present
   - [ ] `format(record: LogRecord) -> str` method
   - [ ] `close()` method
-
 - [ ] **5.2 Logger Handler Management**
+
   - [ ] `add(sink, **options) -> int` method
     - [ ] Determine handler type from sink (file path, stream, callable)
     - [ ] Create appropriate handler instance
@@ -248,8 +253,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Call handler.close()
     - [ ] Remove from handlers list
   - [ ] Thread-safe handler operations
-
 - [ ] **5.3 Handler Options Parsing**
+
   - [ ] Parse and validate options in `add()`:
     - [ ] level: str or int
     - [ ] format: str
@@ -271,13 +276,14 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: CRITICAL**
 
 - [ ] **6.1 Formatter Class**
+
   - [ ] Create `Formatter` class in formatter.py
   - [ ] Parse format string into tokens
   - [ ] Support field access: `{time}`, `{level}`, `{message}`, `{function}`, etc.
   - [ ] Support nested access: `{record.level.name}`, `{extra.user_id}`
   - [ ] Support format specs: `{level: <8}`, `{time:YYYY-MM-DD}`
-
 - [ ] **6.2 Format Token Parsing**
+
   - [ ] Create `Token` class
     - [ ] type: 'literal' or 'field'
     - [ ] value: str
@@ -286,16 +292,16 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] `parse_format_string(format_str: str) -> List[Token]`
     - [ ] Use regex or manual parsing
     - [ ] Handle escaped braces `{{` and `}}`
-
 - [ ] **6.3 Record Field Access**
+
   - [ ] `get_field_value(record: LogRecord, field_name: str) -> Any`
     - [ ] Direct attribute access: `time`, `level`, `message`
     - [ ] Nested access: `level.name`, `process.id`
     - [ ] Extra dict access: `extra.request_id`
   - [ ] Apply format spec to value
   - [ ] Handle missing fields gracefully
-
 - [ ] **6.4 Default Format**
+
   - [ ] Define default format string
   - [ ] Example: `"<green>{time:YYYY-MM-DD HH:mm:ss}</green> | <level>{level: <8}</level> | <cyan>{name}</cyan>:<cyan>{function}</cyan>:<cyan>{line}</cyan> - <level>{message}</level>"`
 
@@ -310,6 +316,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **7.1 StreamHandler Class**
+
   - [ ] Inherit from Handler base class
   - [ ] Accept stream (sys.stdout, sys.stderr, or any file-like object)
   - [ ] Implement `emit(record)` method
@@ -319,8 +326,8 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Implement `close()` method
     - [ ] Flush stream
     - [ ] Don't close stdout/stderr
-
 - [ ] **7.2 Console Output**
+
   - [ ] Default to sys.stderr for console output
   - [ ] Support colorization for terminal output
   - [ ] Check if stream is a TTY
@@ -335,6 +342,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **8.1 FileHandler Class**
+
   - [ ] Inherit from Handler base class
   - [ ] Accept file path (str or Path)
   - [ ] File opening options:
@@ -349,14 +357,14 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Flush buffer
     - [ ] Close file handle
     - [ ] Set file handle to None
-
 - [ ] **8.2 File Path Handling**
+
   - [ ] Convert string paths to Path objects
   - [ ] Create parent directories if needed
   - [ ] Handle relative and absolute paths
   - [ ] Validate write permissions
-
 - [ ] **8.3 Thread Safety**
+
   - [ ] Add lock for file writes
   - [ ] Ensure atomic writes
   - [ ] Handle concurrent access
@@ -370,6 +378,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: MEDIUM**
 
 - [ ] **9.1 Colorizer Class**
+
   - [ ] Create `Colorizer` class in formatter.py
   - [ ] ANSI color code support:
     - [ ] Foreground colors (black, red, green, yellow, blue, magenta, cyan, white)
@@ -384,14 +393,14 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] WARNING: yellow
     - [ ] ERROR: red
     - [ ] CRITICAL: bold red
-
 - [ ] **9.2 Color Tags in Format String**
+
   - [ ] Parse color tags: `<red>text</red>`, `<green>text</green>`
   - [ ] Parse level tag: `<level>text</level>` (uses level's color)
   - [ ] Convert tags to ANSI codes
   - [ ] `strip_colors(text: str)` method for non-TTY output
-
 - [ ] **9.3 Smart Colorization**
+
   - [ ] Auto-detect TTY capability
   - [ ] Disable colors for file output
   - [ ] Allow manual override with colorize option
@@ -406,14 +415,15 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: MEDIUM**
 
 - [ ] **10.1 CallableHandler Class**
+
   - [ ] Inherit from Handler base class
   - [ ] Accept any callable (function)
   - [ ] Implement `emit(record)` method
     - [ ] Format or serialize record
     - [ ] Call the function with formatted output
     - [ ] Handle exceptions in callable
-
 - [ ] **10.2 Serializer**
+
   - [ ] Create `Serializer` class in utils.py
   - [ ] `serialize(record: LogRecord) -> str` method
   - [ ] Convert LogRecord to dict
@@ -423,8 +433,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] timedelta → seconds
     - [ ] Exception → string representation
     - [ ] Custom objects → __repr__
-
 - [ ] **10.3 Integration**
+
   - [ ] Add serialize option to handlers
   - [ ] When serialize=True, use Serializer instead of Formatter
   - [ ] Pass structured data to callable handlers
@@ -440,17 +450,18 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **11.1 Rotation Base Class**
+
   - [ ] Create `Rotation` abstract class
   - [ ] Abstract method: `should_rotate(file_path, record) -> bool`
-
 - [ ] **11.2 SizeRotation Class**
+
   - [ ] Implement size-based rotation
   - [ ] Accept max_size parameter (parse with TimeUtils.parse_size)
   - [ ] Track current file size
   - [ ] Check if size exceeds threshold
   - [ ] `should_rotate()` returns True when size exceeded
-
 - [ ] **11.3 TimeRotation Class**
+
   - [ ] Implement time-based rotation
   - [ ] Support intervals:
     - [ ] "daily", "weekly", "monthly"
@@ -459,8 +470,8 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Track last rotation time
   - [ ] Calculate next rotation time
   - [ ] `should_rotate()` returns True when time reached
-
 - [ ] **11.4 Rotation in FileHandler**
+
   - [ ] Add rotation parameter to FileHandler
   - [ ] Before each write, check `should_rotate()`
   - [ ] If rotation needed:
@@ -478,6 +489,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: MEDIUM**
 
 - [ ] **12.1 Compression Class**
+
   - [ ] Create `Compression` class
   - [ ] `compress(file_path: Path) -> Path` method
   - [ ] Support formats:
@@ -486,8 +498,8 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Use standard library (gzip, zipfile)
   - [ ] Delete original file after compression
   - [ ] Return path to compressed file
-
 - [ ] **12.2 Retention Class**
+
   - [ ] Create `Retention` class
   - [ ] Support retention policies:
     - [ ] Count-based: "10 files"
@@ -497,8 +509,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Find rotated log files
     - [ ] Sort by modification time
     - [ ] Delete files based on policy
-
 - [ ] **12.3 Integration**
+
   - [ ] Add compression and retention parameters to FileHandler
   - [ ] After rotation:
     - [ ] Compress rotated file if compression enabled
@@ -514,13 +526,14 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **13.1 ExceptionFormatter Class**
+
   - [ ] Create `ExceptionFormatter` class
   - [ ] Accept options:
     - [ ] colorize: bool
     - [ ] backtrace: bool (show full trace vs truncated)
     - [ ] diagnose: bool (show variables)
-
 - [ ] **13.2 Basic Exception Formatting**
+
   - [ ] `format_exception(exc_info) -> str` method
   - [ ] Format exception type and message
   - [ ] Format traceback:
@@ -528,8 +541,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Function name
     - [ ] Line number
     - [ ] Code line (if available)
-
 - [ ] **13.3 Diagnose Mode**
+
   - [ ] `get_context_lines(filename, lineno) -> List[str]`
     - [ ] Read source file
     - [ ] Extract 5 lines around error line
@@ -537,14 +550,14 @@ Phase 5: Testing & Polish (Days 15-20)
   - [ ] Extract local variables from frame
   - [ ] Format variables in readable way
   - [ ] Add to exception output
-
 - [ ] **13.4 Colorization**
+
   - [ ] Color exception type (red)
   - [ ] Color file paths (cyan)
   - [ ] Color function names (blue)
   - [ ] Highlight error line (bold red)
-
 - [ ] **13.5 Integration**
+
   - [ ] Capture exception info in LogRecord
   - [ ] Use ExceptionFormatter when exception present
   - [ ] Add exception output to log message
@@ -558,25 +571,26 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **14.1 Extra Context in Logger**
+
   - [ ] Logger.extra dict for global context
   - [ ] Merge extra into LogRecord.extra
   - [ ] Support nested extra updates
-
 - [ ] **14.2 BoundLogger Class**
+
   - [ ] Create `BoundLogger` class
   - [ ] Store reference to parent Logger
   - [ ] Store bound_extra dict
   - [ ] Implement all logging methods (trace, debug, info, etc.)
   - [ ] Merge bound_extra into every log call
   - [ ] Support chaining: `logger.bind(a=1).bind(b=2)`
-
 - [ ] **14.3 Logger.bind() Method**
+
   - [ ] `bind(**kwargs) -> BoundLogger`
   - [ ] Create BoundLogger instance
   - [ ] Pass current logger and kwargs
   - [ ] Return BoundLogger
-
 - [ ] **14.4 ContextManager**
+
   - [ ] Create `ContextManager` class
   - [ ] `__enter__()` method:
     - [ ] Save current Logger.extra
@@ -584,8 +598,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Return logger
   - [ ] `__exit__()` method:
     - [ ] Restore previous Logger.extra
-
 - [ ] **14.5 Logger.contextualize() Method**
+
   - [ ] `contextualize(**kwargs) -> ContextManager`
   - [ ] Create ContextManager instance
   - [ ] Return for use in `with` statement
@@ -601,11 +615,12 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: MEDIUM**
 
 - [ ] **15.1 Filter Support**
+
   - [ ] Filter as callable: `Callable[[LogRecord], bool]`
   - [ ] Pass filter function to handler
   - [ ] Apply in `Handler.should_emit()`
-
 - [ ] **15.2 Built-in Filters**
+
   - [ ] `LevelFilter` class
     - [ ] min_level and max_level
     - [ ] Return True if record.level in range
@@ -613,8 +628,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Accept list of module names
     - [ ] exclude flag (include or exclude)
     - [ ] Match record.module against list
-
 - [ ] **15.3 Filter Examples**
+
   - [ ] Create example filter functions
   - [ ] Filter by module
   - [ ] Filter by custom extra fields
@@ -629,14 +644,15 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: MEDIUM**
 
 - [ ] **16.1 @logger.catch Decorator**
+
   - [ ] Create `catch` method returning decorator
   - [ ] Accept exception types to catch
   - [ ] Accept additional options (level, message, reraise)
   - [ ] Wrap function in try/except
   - [ ] Log exception with Logger
   - [ ] Optionally reraise
-
 - [ ] **16.2 logger.opt() Method**
+
   - [ ] Return modified logger instance
   - [ ] Options:
     - [ ] exception: bool or Exception - include exception info
@@ -645,8 +661,8 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] lazy: bool - defer evaluation
   - [ ] Create temporary logger wrapper
   - [ ] Apply options to next log call only
-
 - [ ] **16.3 Level Management**
+
   - [ ] `add_level(name, no, color, icon)` method
     - [ ] Create new Level
     - [ ] Add to Logger.levels dict
@@ -666,6 +682,7 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: LOW**
 
 - [ ] **17.1 AsyncHandler Class**
+
   - [ ] Create `AsyncHandler` wrapper
   - [ ] Use queue.Queue for message passing
   - [ ] Start worker thread on creation
@@ -674,14 +691,14 @@ Phase 5: Testing & Polish (Days 15-20)
     - [ ] Dequeue records
     - [ ] Pass to wrapped handler
     - [ ] Handle errors
-
 - [ ] **17.2 Queue Management**
+
   - [ ] Set max queue size
   - [ ] Handle full queue (block, drop, or raise)
   - [ ] Graceful shutdown
   - [ ] Flush queue on close
-
 - [ ] **17.3 Integration**
+
   - [ ] Add enqueue parameter to Logger.add()
   - [ ] When enqueue=True, wrap handler in AsyncHandler
   - [ ] Ensure proper cleanup on program exit
@@ -695,23 +712,24 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: CRITICAL**
 
 - [ ] **18.1 Test Logger Basic Functionality**
+
   - [ ] Test all logging methods (trace through critical)
   - [ ] Test message formatting with args/kwargs
   - [ ] Test level filtering
   - [ ] Test handler addition/removal
-
 - [ ] **18.2 Test Handlers**
+
   - [ ] Test StreamHandler output
   - [ ] Test FileHandler file creation and writing
   - [ ] Test CallableHandler execution
-
 - [ ] **18.3 Test Formatters**
+
   - [ ] Test format string parsing
   - [ ] Test field extraction
   - [ ] Test format specs
   - [ ] Test colorization
-
 - [ ] **18.4 Test LogRecord**
+
   - [ ] Test record creation
   - [ ] Test field population
   - [ ] Test serialization
@@ -725,30 +743,31 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **19.1 Test File Rotation**
+
   - [ ] Test size-based rotation
   - [ ] Test time-based rotation
   - [ ] Test file naming
   - [ ] Test multiple rotations
-
 - [ ] **19.2 Test Compression & Retention**
+
   - [ ] Test gzip compression
   - [ ] Test retention by count
   - [ ] Test retention by age
   - [ ] Test retention by size
-
 - [ ] **19.3 Test Context & Binding**
+
   - [ ] Test bind() method
   - [ ] Test contextualize() context manager
   - [ ] Test extra field merging
   - [ ] Test nested contexts
-
 - [ ] **19.4 Test Exception Formatting**
+
   - [ ] Test basic exception formatting
   - [ ] Test diagnose mode
   - [ ] Test backtrace
   - [ ] Test nested exceptions
-
 - [ ] **19.5 Test Filters & Decorators**
+
   - [ ] Test filter functions
   - [ ] Test @catch decorator
   - [ ] Test logger.opt()
@@ -763,30 +782,31 @@ Phase 5: Testing & Polish (Days 15-20)
 **Priority: HIGH**
 
 - [ ] **20.1 API Documentation**
+
   - [ ] Document Logger class and all methods
   - [ ] Document Handler classes
   - [ ] Document Formatter
   - [ ] Document utility functions
   - [ ] Add type hints to all public methods
   - [ ] Generate API docs (Sphinx or mkdocs)
-
 - [ ] **20.2 User Guide**
+
   - [ ] Quick start guide
   - [ ] Basic usage examples
   - [ ] Advanced usage patterns
   - [ ] Configuration guide
   - [ ] Performance tips
   - [ ] Troubleshooting
-
 - [ ] **20.3 Example Scripts**
+
   - [ ] Basic logging example
   - [ ] File rotation example
   - [ ] Context binding example
   - [ ] Exception catching example
   - [ ] Custom handler example
   - [ ] Multi-handler configuration
-
 - [ ] **20.4 README**
+
   - [ ] Project description
   - [ ] Features list
   - [ ] Installation instructions
@@ -803,31 +823,32 @@ Phase 5: Testing & Polish (Days 15-20)
 ### Critical Implementation Details
 
 1. **Thread Safety**
+
    ```python
    # Use locks for shared state
    self._lock = threading.Lock()
-   
+
    def add_handler(self, handler):
        with self._lock:
            self.handlers.append(handler)
    ```
-
 2. **Frame Inspection Depth**
+
    ```python
    # Correct depth is crucial for getting caller info
    # Logger.info() -> Logger._log() -> FrameInspector
    # Need to go back 3+ frames
    frame = sys._getframe(depth)
    ```
-
 3. **Message Formatting**
+
    ```python
    # Support both styles
    logger.info("User {name}", name="John")  # kwargs
    logger.info("User {}", "John")  # positional
    ```
-
 4. **File Rotation Atomicity**
+
    ```python
    # Ensure atomic rotation
    1. Close current file
@@ -835,8 +856,8 @@ Phase 5: Testing & Polish (Days 15-20)
    3. Open new file
    # Don't lose logs during rotation
    ```
-
 5. **Exception Handling in Handlers**
+
    ```python
    # Never let handler exceptions break logging
    try:
@@ -883,6 +904,7 @@ Phase 5: Testing & Polish (Days 15-20)
 10. ✅ Colorizer (Day 9) - Better UX
 
 **Can be done later:**
+
 - Compression & Retention (Day 12)
 - Filters (Day 15)
 - Decorators (Day 16)
@@ -893,6 +915,7 @@ Phase 5: Testing & Polish (Days 15-20)
 ## 🎯 Milestones & Testing Gates
 
 ### Milestone 1: Basic Logging (End of Day 6)
+
 **Test**: Can log "Hello World" to console and file with formatting
 
 ```python
@@ -902,6 +925,7 @@ logger.info("Hello {name}", name="World")
 ```
 
 ### Milestone 2: Production Ready (End of Day 12)
+
 **Test**: Can run in production with rotation, compression, retention
 
 ```python
@@ -913,6 +937,7 @@ logger.add("app.log",
 ```
 
 ### Milestone 3: Feature Complete (End of Day 17)
+
 **Test**: All Loguru-like features working
 
 ```python
@@ -931,22 +956,26 @@ def my_function():
 **If you want a working logger ASAP (3-5 days):**
 
 Day 1-2:
+
 - [ ] Project structure
 - [ ] Level class
 - [ ] LogRecord class
 - [ ] Frame inspector
 
 Day 3:
+
 - [ ] Basic Logger class
 - [ ] Logging methods (info, error, etc.)
 - [ ] Basic Formatter (just string substitution)
 
 Day 4:
+
 - [ ] StreamHandler
 - [ ] FileHandler (basic, no rotation)
 - [ ] Handler management
 
 Day 5:
+
 - [ ] Basic colorization
 - [ ] Simple file rotation by size
 - [ ] Testing and examples
