@@ -213,7 +213,7 @@ class FileHandler(Handler):
     """Handler for file output
     
     This handler writes log records to a file. Supports file rotation,
-    compression, and retention (to be implemented in later days).
+    compression, and retention.
     
     Attributes:
         path: Path to the log file
@@ -221,6 +221,8 @@ class FileHandler(Handler):
         encoding: File encoding (default 'utf-8')
         file_handle: Open file handle
         rotation: Optional rotation strategy
+        compression: Optional compression strategy
+        retention: Optional retention strategy
     """
     
     def __init__(
@@ -232,6 +234,8 @@ class FileHandler(Handler):
         encoding: str = 'utf-8',
         buffering: int = 1,  # Line buffered
         rotation: Optional[Union[str, int, 'Rotation']] = None,
+        compression: Optional[Union[str, 'Compression']] = None,
+        retention: Optional[Union[str, int, 'Retention']] = None,
         **options
     ):
         """Initialize file handler
@@ -249,6 +253,15 @@ class FileHandler(Handler):
                 - int: Size-based rotation in bytes
                 - str: Size-based rotation (e.g., "10 MB", "500 KB")
                 - Rotation: Custom rotation strategy instance
+            compression: Compression format. Can be:
+                - None: No compression (default)
+                - str: "gz" or "zip"
+                - Compression: Custom compression instance
+            retention: Retention policy. Can be:
+                - None: No retention (default)
+                - int: Keep N most recent files (count-based)
+                - str: Keep files for duration (e.g., "7 days", "30 days")
+                - Retention: Custom retention instance
             **options: Additional handler options
         """
         super().__init__(sink, level, formatter, **options)
@@ -258,6 +271,8 @@ class FileHandler(Handler):
         self.buffering: int = buffering
         self.file_handle: Optional[TextIO] = None
         self.rotation: Optional['Rotation'] = self._parse_rotation(rotation)
+        self.compression: Optional['Compression'] = self._parse_compression(compression)
+        self.retention: Optional['Retention'] = self._parse_retention(retention)
         
         # Create parent directories if needed
         self.path.parent.mkdir(parents=True, exist_ok=True)
@@ -320,6 +335,62 @@ class FileHandler(Handler):
             f"rotation must be None, int, str, or Rotation instance, got {type(rotation)}"
         )
     
+    def _parse_compression(self, compression: Optional[Union[str, 'Compression']]) -> Optional['Compression']:
+        """Parse compression parameter into a Compression instance
+        
+        Args:
+            compression: Compression specification
+            
+        Returns:
+            Compression instance or None
+        """
+        if compression is None:
+            return None
+        
+        from .compression import Compression
+        
+        # Already a Compression instance
+        if isinstance(compression, Compression):
+            return compression
+        
+        # String format: "gz", "gzip", or "zip"
+        if isinstance(compression, str):
+            return Compression(format=compression)
+        
+        raise TypeError(
+            f"compression must be None, str, or Compression instance, got {type(compression)}"
+        )
+    
+    def _parse_retention(self, retention: Optional[Union[str, int, 'Retention']]) -> Optional['Retention']:
+        """Parse retention parameter into a Retention instance
+        
+        Args:
+            retention: Retention specification
+            
+        Returns:
+            Retention instance or None
+        """
+        if retention is None:
+            return None
+        
+        from .retention import Retention
+        
+        # Already a Retention instance
+        if isinstance(retention, Retention):
+            return retention
+        
+        # Integer -> count-based retention
+        if isinstance(retention, int):
+            return Retention(count=retention)
+        
+        # String -> age-based retention (e.g., "7 days", "30 days")
+        if isinstance(retention, str):
+            return Retention(age=retention)
+        
+        raise TypeError(
+            f"retention must be None, int, str, or Retention instance, got {type(retention)}"
+        )
+    
     def _should_colorize(self) -> bool:
         """Files should not have colors by default
         
@@ -347,8 +418,10 @@ class FileHandler(Handler):
         This method:
         1. Closes the current file
         2. Renames it with a timestamp
-        3. Opens a new file with the original name
-        4. Resets the rotation strategy
+        3. Optionally compresses the rotated file
+        4. Applies retention policy to clean up old files
+        5. Opens a new file with the original name
+        6. Resets the rotation strategy
         """
         try:
             # Close current file
@@ -372,6 +445,26 @@ class FileHandler(Handler):
             # Rename current file to rotated name
             if self.path.exists():
                 self.path.rename(rotated_path)
+                
+                # Compress the rotated file if compression is enabled
+                if self.compression:
+                    try:
+                        compressed_path = self.compression.compress(rotated_path)
+                        # rotated_path is deleted by compression if keep_original=False
+                    except Exception as e:
+                        sys.stderr.write(f"Compression error: {e}\n")
+                
+                # Apply retention policy to clean up old files
+                if self.retention:
+                    try:
+                        # Pattern to match all rotated files (including compressed ones)
+                        # e.g., "app.*.log" or "app.*.log.gz"
+                        pattern = f"{stem}.*{suffix}*"
+                        deleted = self.retention.clean(parent, pattern)
+                        if deleted:
+                            pass  # Silently clean up old files
+                    except Exception as e:
+                        sys.stderr.write(f"Retention cleanup error: {e}\n")
             
             # Reset rotation strategy
             if self.rotation:

@@ -66,6 +66,10 @@ class Logger:
                 - rotation: Rotation strategy for FileHandler (default: None)
                   Can be: size string ("10 MB"), time string ("daily", "1 hour"),
                   or integer (bytes)
+                - compression: Compression format for FileHandler (default: None)
+                  Can be: "gz", "gzip", or "zip"
+                - retention: Retention policy for FileHandler (default: None)
+                  Can be: integer (keep N files), string (e.g., "7 days", "30 days")
             
         Returns:
             Handler ID for later removal
@@ -74,6 +78,9 @@ class Logger:
             >>> handler_id = logger.add("app.log", level="INFO")
             >>> logger.add("app.log", rotation="10 MB")  # Rotate when 10MB
             >>> logger.add("app.log", rotation="daily")  # Rotate daily
+            >>> logger.add("app.log", rotation="10 MB", compression="gz")  # Rotate and compress
+            >>> logger.add("app.log", rotation="daily", retention=7)  # Keep 7 files
+            >>> logger.add("app.log", retention="30 days")  # Delete files > 30 days
             >>> logger.add(sys.stderr, level="ERROR", colorize=True)
             >>> logger.add(lambda msg: print(msg), level="DEBUG")
         """
@@ -104,6 +111,8 @@ class Logger:
                 mode = options.get('mode', 'a')
                 encoding = options.get('encoding', 'utf-8')
                 rotation = options.get('rotation', None)
+                compression = options.get('compression', None)
+                retention = options.get('retention', None)
                 handler = FileHandler(
                     sink=Path(sink),
                     level=level_obj,
@@ -111,6 +120,8 @@ class Logger:
                     mode=mode,
                     encoding=encoding,
                     rotation=rotation,
+                    compression=compression,
+                    retention=retention,
                     filter_func=filter_func,
                     colorize=colorize or False,
                     serialize=serialize
@@ -191,10 +202,7 @@ class Logger:
                     return
             
             # Handler not found
-            raise HandlerNotFoundError(
-                handler_id=handler_id,
-                message=f"Handler with ID {handler_id} not found"
-            )
+            raise HandlerNotFoundError(handler_id=handler_id)
     
     def trace(self, message: str, *args, **kwargs) -> None:
         """Log a trace message
