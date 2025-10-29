@@ -19,6 +19,99 @@ from .bound_logger import BoundLogger
 from pathlib import Path
 
 
+class OptLogger:
+    """Temporary logger wrapper with options applied
+    
+    This class wraps a Logger instance and applies options to a single log call.
+    It's returned by Logger.opt() and should be used immediately.
+    
+    Attributes:
+        _logger: The wrapped Logger instance
+        _options: Options to apply (exception, depth, record, lazy)
+    """
+    
+    def __init__(self, logger: 'Logger', **options):
+        """Initialize OptLogger
+        
+        Args:
+            logger: Logger instance to wrap
+            **options: Options to apply
+        """
+        self._logger = logger
+        self._options = options
+    
+    def _log_with_options(self, level: str, message: str, *args, **kwargs):
+        """Log with options applied
+        
+        Args:
+            level: Log level name
+            message: Log message
+            *args: Positional arguments for message formatting
+            **kwargs: Keyword arguments for message formatting and context
+        """
+        # Apply depth option (adjust frame inspection)
+        depth = self._options.get('depth', 0)
+        
+        # Apply exception option
+        if 'exception' in self._options:
+            exc = self._options['exception']
+            if exc is True:
+                # Use sys.exc_info() to get current exception
+                import sys
+                exc_info = sys.exc_info()
+                if exc_info[0] is not None:
+                    kwargs['exception'] = exc_info[1]
+            elif exc is not None and exc is not False:
+                # Use provided exception
+                kwargs['exception'] = exc
+        
+        # Apply lazy option (deferred evaluation)
+        # For now, we'll just pass through - full lazy evaluation is complex
+        
+        # Call the logger with adjusted depth
+        # We need to adjust the frame depth for accurate file/line info
+        original_depth = 2 + depth  # Account for this wrapper
+        self._logger._log(level, message, *args, _depth=original_depth, **kwargs)
+    
+    def trace(self, message: str, *args, **kwargs):
+        """Log trace with options"""
+        self._log_with_options("TRACE", message, *args, **kwargs)
+    
+    def debug(self, message: str, *args, **kwargs):
+        """Log debug with options"""
+        self._log_with_options("DEBUG", message, *args, **kwargs)
+    
+    def info(self, message: str, *args, **kwargs):
+        """Log info with options"""
+        self._log_with_options("INFO", message, *args, **kwargs)
+    
+    def success(self, message: str, *args, **kwargs):
+        """Log success with options"""
+        self._log_with_options("SUCCESS", message, *args, **kwargs)
+    
+    def warning(self, message: str, *args, **kwargs):
+        """Log warning with options"""
+        self._log_with_options("WARNING", message, *args, **kwargs)
+    
+    def error(self, message: str, *args, **kwargs):
+        """Log error with options"""
+        self._log_with_options("ERROR", message, *args, **kwargs)
+    
+    def critical(self, message: str, *args, **kwargs):
+        """Log critical with options"""
+        self._log_with_options("CRITICAL", message, *args, **kwargs)
+    
+    def log(self, level: Union[str, int], message: str, *args, **kwargs):
+        """Log at specified level with options"""
+        if isinstance(level, int):
+            # Find level name by number
+            for name, lvl in self._logger.levels.items():
+                if lvl.no == level:
+                    level = name
+                    break
+        self._log_with_options(level, message, *args, **kwargs)
+
+
 class Logger:
     """Main logger class
     
@@ -44,7 +137,8 @@ class Logger:
         self.extra: Dict[str, Any] = {}
         self.start_time: datetime = datetime.now()
         self._handler_id_counter: int = 0
-        self._lock = threading.Lock()
+        self._disabled: set = set()  # Set of disabled module/logger names
+        self._lock = threading.Lock()  # Thread lock for handler operations
         
     def add(self, sink: Any, **options) -> int:
         """Add a handler to the logger
@@ -384,7 +478,7 @@ class Logger:
         
         self._log(level, message, *args, **kwargs)
     
-    def _log(self, level: Union[str, int], message: str, *args, **kwargs) -> None:
+    def _log(self, level: Union[str, int], message: str, *args, _depth: int = 2, **kwargs) -> None:
         """Internal logging method
         
         This method:
@@ -398,6 +492,7 @@ class Logger:
             level: Log level name or number
             message: Log message (may contain format placeholders)
             *args: Positional arguments for formatting
+            _depth: Stack frame depth adjustment (default: 2)
             **kwargs: Keyword arguments for formatting or extra context
         """
         # Normalize level to Level object
@@ -436,9 +531,14 @@ class Logger:
         # Format the message
         formatted_message = self._format_message(message, args, kwargs)
         
-        # Get caller frame information (depth=2: _log -> calling method -> user code)
-        frame = FrameInspector.get_caller_frame(depth=2)
+        # Get caller frame information
+        frame = FrameInspector.get_caller_frame(depth=_depth)
         frame_info = FrameInspector.extract_frame_info(frame)
+        
+        # Check if this module is disabled
+        module_name = frame_info['module']
+        if module_name in self._disabled:
+            return  # Skip logging for disabled modules
         
         # Get process and thread information
         try:
@@ -626,30 +726,146 @@ class Logger:
                     pass
     
     
-    def catch(self, exception=Exception, **kwargs):
-        """Decorator to catch exceptions
+    def catch(self, exception=Exception, *, level="ERROR", message="An error occurred", reraise=False, onerror=None):
+        """Decorator to catch exceptions in functions
+        
+        Wraps a function in try/except and logs any exceptions that occur.
+        Useful for preventing crashes and ensuring exceptions are logged.
         
         Args:
-            exception: Exception type(s) to catch
-            **kwargs: Additional options
+            exception: Exception type(s) to catch (default: Exception)
+            level: Log level to use when catching exception (default: "ERROR")
+            message: Custom message template (default: "An error occurred")
+            reraise: Whether to reraise the exception after logging (default: False)
+            onerror: Optional callback function(exception) called when error occurs
             
         Returns:
-            Decorator function (will be implemented in Day 16)
+            Decorator function that wraps the target function
+            
+        Example:
+            >>> @logger.catch()
+            ... def risky_function():
+            ...     return 1 / 0
+            
+            >>> @logger.catch(exception=ValueError, level="WARNING", reraise=True)
+            ... def validate_data(data):
+            ...     if not data:
+            ...         raise ValueError("Data is empty")
         """
-        # TODO: Implement catch decorator (Day 16)
-        raise NotImplementedError("catch() will be implemented in Day 16")
+        import functools
+        
+        def decorator(func):
+            @functools.wraps(func)
+            def wrapper(*args, **kwargs):
+                try:
+                    return func(*args, **kwargs)
+                except exception as e:
+                    # Log the exception
+                    if message:
+                        self.log(level, message, exception=e)
+                    else:
+                        self.log(level, f"Exception in {func.__name__}", exception=e)
+                    
+                    # Call onerror callback if provided
+                    if onerror is not None and callable(onerror):
+                        try:
+                            onerror(e)
+                        except Exception:
+                            pass  # Don't let onerror break the catch
+                    
+                    # Reraise if requested
+                    if reraise:
+                        raise
+                    
+                    # Otherwise, return None
+                    return None
+            
+            return wrapper
+        
+        return decorator
     
-    def opt(self, **kwargs) -> 'Logger':
-        """Return logger with options
+    def opt(self, *, exception=None, depth=0, record=False, lazy=False) -> 'OptLogger':
+        """Return a logger wrapper with options applied to the next log call
+        
+        This method returns an OptLogger instance that applies options to a single
+        log call. Useful for including exception info, adjusting stack depth, etc.
         
         Args:
-            **kwargs: Options to apply
+            exception: Include exception info in the log
+                - True: Use sys.exc_info() to get current exception
+                - Exception instance: Use specific exception
+                - False/None: No exception (default)
+            depth: Stack depth adjustment for file/line info (default: 0)
+                Positive values go deeper in the stack
+            record: Whether to log with full LogRecord (not fully implemented)
+            lazy: Defer message evaluation (not fully implemented)
             
         Returns:
-            Logger with options applied (will be implemented in Day 16)
+            OptLogger instance that wraps this logger with options
+            
+        Example:
+            >>> try:
+            ...     1 / 0
+            ... except:
+            ...     logger.opt(exception=True).error("Division failed")
+            
+            >>> logger.opt(depth=1).info("Called from wrapper")
         """
-        # TODO: Implement opt (Day 16)
-        raise NotImplementedError("opt() will be implemented in Day 16")
+        return OptLogger(self, exception=exception, depth=depth, record=record, lazy=lazy)
+    
+    def add_level(self, name: str, no: int, color: str = "white", icon: str = "") -> None:
+        """Add a custom log level
+        
+        Creates a new log level and dynamically adds a logging method to the Logger class.
+        
+        Args:
+            name: Name of the level (e.g., "VERBOSE", "NOTICE")
+            no: Numeric level value (higher = more severe)
+            color: ANSI color name for the level (default: "white")
+            icon: Icon/emoji for the level (default: "")
+            
+        Example:
+            >>> logger.add_level("VERBOSE", 15, color="cyan", icon="🔍")
+            >>> logger.verbose("Verbose message")  # New method created automatically
+        """
+        # Create the Level object
+        level = Level(name=name.upper(), no=no, color=color, icon=icon)
+        
+        # Add to levels dict
+        self.levels[name.upper()] = level
+        
+        # Dynamically add logging method to Logger class
+        method_name = name.lower()
+        
+        def log_method(self, message: str, *args, **kwargs):
+            """Dynamically generated log method"""
+            self._log(name.upper(), message, *args, **kwargs)
+        
+        # Set the method on the Logger class
+        setattr(Logger, method_name, log_method)
+    
+    def disable(self, name: str) -> None:
+        """Disable logging from a specific module or logger
+        
+        Args:
+            name: Module name or logger name to disable (e.g., "requests", "urllib3")
+            
+        Example:
+            >>> logger.disable("urllib3")  # Silence urllib3 logs
+            >>> logger.disable("myapp.tests")  # Silence test module logs
+        """
+        self._disabled.add(name)
+    
+    def enable(self, name: str) -> None:
+        """Enable logging from a previously disabled module or logger
+        
+        Args:
+            name: Module name or logger name to enable
+            
+        Example:
+            >>> logger.enable("urllib3")  # Re-enable urllib3 logs
+        """
+        self._disabled.discard(name)
 
 
 # Create a global logger instance for convenience

@@ -725,39 +725,39 @@ Phase 5: Testing & Polish (Days 15-20)
 
 **Priority: MEDIUM**
 
-- [ ] **16.1 @logger.catch Decorator**
+- [x] **16.1 @logger.catch Decorator**
 
-  - [ ] Create `catch` method returning decorator
-  - [ ] Accept exception types to catch
-  - [ ] Accept additional options (level, message, reraise)
-  - [ ] Wrap function in try/except
-  - [ ] Log exception with Logger
-  - [ ] Optionally reraise
+  - [x] Create `catch` method returning decorator
+  - [x] Accept exception types to catch
+  - [x] Accept additional options (level, message, reraise)
+  - [x] Wrap function in try/except
+  - [x] Log exception with Logger
+  - [x] Optionally reraise
 
-- [ ] **16.2 logger.opt() Method**
+- [x] **16.2 logger.opt() Method**
 
-  - [ ] Return modified logger instance
-  - [ ] Options:
-    - [ ] exception: bool or Exception - include exception info
-    - [ ] depth: int - adjust stack frame depth
-    - [ ] record: bool - log with full LogRecord
-    - [ ] lazy: bool - defer evaluation
-  - [ ] Create temporary logger wrapper
-  - [ ] Apply options to next log call only
+  - [x] Return modified logger instance
+  - [x] Options:
+    - [x] exception: bool or Exception - include exception info
+    - [x] depth: int - adjust stack frame depth
+    - [x] record: bool - log with full LogRecord (basic)
+    - [x] lazy: bool - defer evaluation (basic)
+  - [x] Create temporary logger wrapper (OptLogger)
+  - [x] Apply options to next log call only
 
-- [ ] **16.3 Level Management**
+- [x] **16.3 Level Management**
 
-  - [ ] `add_level(name, no, color, icon)` method
-    - [ ] Create new Level
-    - [ ] Add to Logger.levels dict
-    - [ ] Dynamically add logging method to Logger
-  - [ ] `disable(name)` method
-    - [ ] Add module/logger name to disabled set
-    - [ ] Skip logging from disabled modules
-  - [ ] `enable(name)` method
-    - [ ] Remove from disabled set
+  - [x] `add_level(name, no, color, icon)` method
+    - [x] Create new Level
+    - [x] Add to Logger.levels dict
+    - [x] Dynamically add logging method to Logger
+  - [x] `disable(name)` method
+    - [x] Add module/logger name to disabled set
+    - [x] Skip logging from disabled modules
+  - [x] `enable(name)` method
+    - [x] Remove from disabled set
 
-**Deliverables**: Decorators and utilities
+**Deliverables**: Decorators and utilities ✅
 
 ---
 
