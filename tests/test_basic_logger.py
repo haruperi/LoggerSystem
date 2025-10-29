@@ -7,7 +7,7 @@ import os
 from io import StringIO
 
 # Add the parent directory to the path to import mylogger
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..'))
+sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 
 from mylogger import logger, Logger
 
@@ -17,7 +17,7 @@ def test_basic_logging():
     print("=" * 60)
     print("TEST 1: Basic Logging Methods")
     print("=" * 60)
-    
+
     logger.trace("This is a TRACE message")
     logger.debug("This is a DEBUG message")
     logger.info("This is an INFO message")
@@ -33,7 +33,7 @@ def test_message_formatting_positional():
     print("=" * 60)
     print("TEST 2: Message Formatting - Positional Arguments")
     print("=" * 60)
-    
+
     logger.info("User {}", "John")
     logger.info("User {} logged in from {}", "John", "NYC")
     logger.info("Numbers: {}, {}, {}", 1, 2, 3)
@@ -45,7 +45,7 @@ def test_message_formatting_named():
     print("=" * 60)
     print("TEST 3: Message Formatting - Named Arguments")
     print("=" * 60)
-    
+
     logger.info("User {name}", name="John")
     logger.info("User {name} logged in from {city}", name="John", city="NYC")
     logger.info("Order #{order_id} for ${amount:.2f}", order_id=12345, amount=99.99)
@@ -57,7 +57,7 @@ def test_message_formatting_mixed():
     print("=" * 60)
     print("TEST 4: Message Formatting - Mixed Arguments")
     print("=" * 60)
-    
+
     logger.info("User {} from {city}", "John", city="NYC")
     logger.info("Processing {} items for {user}", 10, user="admin")
     print()
@@ -68,7 +68,7 @@ def test_extra_context():
     print("=" * 60)
     print("TEST 5: Extra Context")
     print("=" * 60)
-    
+
     logger.info("User logged in", user_id=123, session_id="abc123")
     logger.error("Failed to process request", error_code=500, url="/api/users")
     print()
@@ -79,15 +79,15 @@ def test_log_method():
     print("=" * 60)
     print("TEST 6: log() Method with String Levels")
     print("=" * 60)
-    
+
     logger.log("INFO", "Using log() with string level")
     logger.log("ERROR", "Error via log() method")
     print()
-    
+
     print("=" * 60)
     print("TEST 7: log() Method with Numeric Levels")
     print("=" * 60)
-    
+
     logger.log(10, "DEBUG level (10)")
     logger.log(20, "INFO level (20)")
     logger.log(40, "ERROR level (40)")
@@ -99,13 +99,13 @@ def test_multiple_logger_instances():
     print("=" * 60)
     print("TEST 8: Multiple Logger Instances")
     print("=" * 60)
-    
+
     logger1 = Logger()
     logger2 = Logger()
-    
+
     logger1.info("Message from logger1")
     logger2.info("Message from logger2")
-    
+
     # They should have different start times
     print(f"Logger1 start time: {logger1.start_time}")
     print(f"Logger2 start time: {logger2.start_time}")
@@ -117,9 +117,9 @@ def test_global_logger():
     print("=" * 60)
     print("TEST 9: Global Logger Instance")
     print("=" * 60)
-    
+
     from mylogger import logger as global_logger
-    
+
     global_logger.info("Using global logger instance")
     global_logger.success("Global logger works!")
     print()
@@ -130,7 +130,7 @@ def test_exception_info():
     print("=" * 60)
     print("TEST 10: Exception Info (Basic)")
     print("=" * 60)
-    
+
     try:
         result = 1 / 0
     except ZeroDivisionError as e:
@@ -145,16 +145,16 @@ def test_level_validation():
     print("=" * 60)
     print("TEST 11: Level Validation")
     print("=" * 60)
-    
+
     # Valid level
     logger.log("INFO", "Valid level")
-    
+
     # Invalid level should raise InvalidLevelError
     try:
         logger.log("INVALID", "This should fail")
     except Exception as e:
         print(f"[OK] Caught expected error: {type(e).__name__}: {e}", file=sys.stderr)
-    
+
     # Invalid numeric level
     try:
         logger.log(999, "This should also fail")
@@ -168,13 +168,13 @@ def test_formatting_error_handling():
     print("=" * 60)
     print("TEST 12: Formatting Error Handling")
     print("=" * 60)
-    
+
     # Too few arguments
     logger.info("User {} from {}", "John")  # Missing second argument
-    
+
     # Missing key
     logger.info("User {name} from {city}", name="John")  # Missing city
-    
+
     print("[OK] Formatting errors handled gracefully (logs still output)")
     print()
 
@@ -184,7 +184,7 @@ def main():
     print("\n" + "=" * 60)
     print("MYLOGGER DAY 4 - BASIC LOGGER IMPLEMENTATION TESTS")
     print("=" * 60 + "\n")
-    
+
     test_basic_logging()
     test_message_formatting_positional()
     test_message_formatting_named()
@@ -196,7 +196,7 @@ def main():
     test_exception_info()
     test_level_validation()
     test_formatting_error_handling()
-    
+
     print("=" * 60)
     print("ALL TESTS COMPLETED")
     print("=" * 60)
@@ -207,4 +207,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

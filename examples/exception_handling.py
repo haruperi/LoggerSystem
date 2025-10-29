@@ -4,6 +4,7 @@ Exception handling examples
 
 from mylogger import logger
 
+
 @logger.catch
 def risky_function():
     """Function that might raise an exception"""
@@ -20,10 +21,10 @@ def manual_exception_handling():
 
 def main():
     """Exception handling examples"""
-    
+
     # Using decorator
     risky_function()
-    
+
     # Manual handling
     manual_exception_handling()
 

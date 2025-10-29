@@ -19,14 +19,15 @@ Features:
 """
 
 from .logger import Logger, logger
-from .level import (
-    TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL,
-    DEFAULT_LEVELS
-)
+from .level import TRACE, DEBUG, INFO, SUCCESS, WARNING, ERROR, CRITICAL, DEFAULT_LEVELS
 from .record import LogRecord, Level, FileInfo, ProcessInfo, ThreadInfo, ExceptionInfo
 from .exceptions import (
-    LoggerError, InvalidLevelError, HandlerNotFoundError,
-    RotationError, FormatterError, CompressionError
+    LoggerError,
+    InvalidLevelError,
+    HandlerNotFoundError,
+    RotationError,
+    FormatterError,
+    CompressionError,
 )
 
 __version__ = "1.0.0"
@@ -34,17 +35,15 @@ __all__ = [
     # Main logger interface
     "logger",
     "Logger",
-    
     # Log levels
     "TRACE",
-    "DEBUG", 
+    "DEBUG",
     "INFO",
     "SUCCESS",
     "WARNING",
     "ERROR",
     "CRITICAL",
     "DEFAULT_LEVELS",
-    
     # Data structures
     "LogRecord",
     "Level",
@@ -52,7 +51,6 @@ __all__ = [
     "ProcessInfo",
     "ThreadInfo",
     "ExceptionInfo",
-    
     # Exceptions
     "LoggerError",
     "InvalidLevelError",
