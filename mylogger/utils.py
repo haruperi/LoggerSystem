@@ -360,16 +360,154 @@ class TimeUtils:
 
 
 class Serializer:
-    """Serialize log records to JSON"""
+    """Serialize log records to JSON
+    
+    This class converts LogRecord objects to JSON strings, handling
+    all the special types that might not be directly serializable:
+    - datetime objects → ISO format strings
+    - timedelta objects → seconds (float)
+    - Exception objects → string representation
+    - Custom objects → repr() or str()
+    - Path objects → string representation
+    """
     
     @staticmethod
-    def serialize(record) -> str:
-        """Serialize a log record"""
-        # TODO: Implement JSON serialization
-        return "{}"
+    def serialize(record: 'LogRecord') -> str:
+        """Serialize a log record to JSON string
+        
+        This method converts a LogRecord to a JSON string, handling
+        all non-serializable objects appropriately.
+        
+        Args:
+            record: LogRecord instance to serialize
+            
+        Returns:
+            JSON string representation of the record
+            
+        Example:
+            >>> from mylogger.record import LogRecord
+            >>> json_str = Serializer.serialize(record)
+            >>> print(json_str)
+            {"level": {"name": "INFO", ...}, "message": "Hello", ...}
+        """
+        import json
+        from datetime import datetime, timedelta
+        
+        # Convert LogRecord to dictionary
+        data = record.to_dict()
+        
+        # Serialize to JSON with custom handling
+        try:
+            return json.dumps(data, default=Serializer._json_default, ensure_ascii=False)
+        except Exception as e:
+            # Fallback: return a minimal JSON with error info
+            return json.dumps({
+                'level': record.level.name,
+                'message': record.message,
+                'serialization_error': str(e)
+            })
     
     @staticmethod
-    def to_json(record) -> str:
-        """Convert record to JSON string"""
-        # TODO: Implement JSON conversion
-        return "{}"
+    def to_dict(record: 'LogRecord') -> Dict[str, Any]:
+        """Convert log record to dictionary
+        
+        This is a convenience method that calls the LogRecord's to_dict()
+        method and post-processes it to ensure all values are JSON-serializable.
+        
+        Args:
+            record: LogRecord instance to convert
+            
+        Returns:
+            Dictionary with all record fields
+            
+        Example:
+            >>> data = Serializer.to_dict(record)
+            >>> print(data['level']['name'])
+            'INFO'
+        """
+        data = record.to_dict()
+        
+        # Post-process to ensure all nested values are serializable
+        return Serializer._sanitize_dict(data)
+    
+    @staticmethod
+    def _sanitize_dict(obj: Any) -> Any:
+        """Recursively sanitize dictionary values for JSON serialization
+        
+        This method walks through nested dictionaries and lists, converting
+        non-serializable objects to serializable representations.
+        
+        Args:
+            obj: Object to sanitize (can be dict, list, or any value)
+            
+        Returns:
+            Sanitized object that is JSON-serializable
+        """
+        from datetime import datetime, timedelta
+        from pathlib import Path
+        
+        if isinstance(obj, dict):
+            return {key: Serializer._sanitize_dict(value) for key, value in obj.items()}
+        elif isinstance(obj, (list, tuple)):
+            return [Serializer._sanitize_dict(item) for item in obj]
+        elif isinstance(obj, datetime):
+            return obj.isoformat()
+        elif isinstance(obj, timedelta):
+            return obj.total_seconds()
+        elif isinstance(obj, Path):
+            return str(obj)
+        elif isinstance(obj, Exception):
+            return str(obj)
+        elif isinstance(obj, (str, int, float, bool, type(None))):
+            return obj
+        else:
+            # For any other type, try to convert to string
+            try:
+                return str(obj)
+            except Exception:
+                return repr(obj)
+    
+    @staticmethod
+    def _json_default(obj: Any) -> Any:
+        """Custom JSON encoder for non-serializable objects
+        
+        This function is used as the 'default' parameter in json.dumps()
+        to handle objects that are not natively JSON-serializable.
+        
+        Args:
+            obj: Object that json.dumps() cannot serialize
+            
+        Returns:
+            JSON-serializable representation of the object
+            
+        Raises:
+            TypeError: If object cannot be serialized (should not happen)
+        """
+        from datetime import datetime, timedelta
+        from pathlib import Path
+        
+        # Handle datetime objects
+        if isinstance(obj, datetime):
+            return obj.isoformat()
+        
+        # Handle timedelta objects
+        if isinstance(obj, timedelta):
+            return obj.total_seconds()
+        
+        # Handle Path objects
+        if isinstance(obj, Path):
+            return str(obj)
+        
+        # Handle Exception objects
+        if isinstance(obj, Exception):
+            return {
+                'type': type(obj).__name__,
+                'message': str(obj),
+                'repr': repr(obj)
+            }
+        
+        # For any other type, try repr() or str()
+        try:
+            return str(obj)
+        except Exception:
+            return repr(obj)

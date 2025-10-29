@@ -341,6 +341,9 @@ class CallableHandler(Handler):
     def emit(self, record: 'LogRecord') -> None:
         """Call the function with the record
         
+        If serialize=True, the function receives a JSON string.
+        Otherwise, it receives a formatted string.
+        
         Args:
             record: LogRecord to emit
         """
@@ -350,12 +353,17 @@ class CallableHandler(Handler):
         try:
             with self._lock:
                 if self.serialize:
-                    # Pass the record object for serialization
-                    self.func(record)
+                    # Serialize to JSON and pass as string
+                    from .utils import Serializer
+                    json_str = Serializer.serialize(record)
+                    self.func(json_str)
                 else:
                     # Format and pass as string
                     formatted = self.format(record)
                     self.func(formatted)
         except Exception as e:
-            # Don't let handler errors break logging
-            sys.stderr.write(f"Error in CallableHandler: {e}\n")
+            if self.catch:
+                # Don't let handler errors break logging
+                sys.stderr.write(f"Error in CallableHandler: {e}\n")
+            else:
+                raise
