@@ -165,35 +165,58 @@ Phase 5: Testing & Polish (Days 15-20)
 
 **Priority: HIGH**
 
-- [ ] **3.1 Constants File**
+- [x] **3.1 Constants File**
 
-  - [ ] ANSI color codes dictionary
-  - [ ] Default format string
-  - [ ] Level name to number mapping
-  - [ ] Default datetime format patterns
+  - [x] ANSI color codes dictionary (21 foreground colors/styles)
+  - [x] ANSI background colors dictionary (8 colors)
+  - [x] Default format string (DEFAULT_FORMAT)
+  - [x] Multiple format presets (SIMPLE, MINIMAL, DETAILED)
+  - [x] Level name to number mapping (LEVEL_MAP)
+  - [x] Reverse mapping (LEVEL_NAMES)
+  - [x] Default datetime format patterns (20 tokens)
+  - [x] Size unit multipliers (SIZE_UNITS - 9 units)
+  - [x] Time unit multipliers (TIME_UNITS - 27 units)
+  - [x] Environment variable names
+  - [x] Default encoding and buffer size
 
-- [ ] **3.2 Time Utilities**
+- [x] **3.2 Time Utilities**
 
-  - [ ] Create `TimeUtils` class
-  - [ ] `parse_duration(duration: str)` method
-    - [ ] Parse "10 seconds", "5 minutes", "2 hours", "1 day"
-    - [ ] Parse "10s", "5m", "2h", "1d"
-    - [ ] Return timedelta object
-  - [ ] `parse_size(size: str)` method
-    - [ ] Parse "10 KB", "5 MB", "2 GB"
-    - [ ] Parse "10KB", "5MB", "2GB"
-    - [ ] Return bytes as integer
-  - [ ] `format_time(dt: datetime, fmt: str)` method
-    - [ ] Support custom format tokens (YYYY, MM, DD, HH, mm, ss)
-    - [ ] Convert to Python's strftime format
+  - [x] Create `TimeUtils` class
+  - [x] `parse_duration(duration: str)` method
+    - [x] Parse "10 seconds", "5 minutes", "2 hours", "1 day"
+    - [x] Parse "10s", "5m", "2h", "1d"
+    - [x] Parse combined: "1d 2h 30m"
+    - [x] Parse fractional: "1.5 hours", "0.5 days"
+    - [x] Return timedelta object
+    - [x] Comprehensive error handling
+  - [x] `parse_size(size: str)` method
+    - [x] Parse "10 KB", "5 MB", "2 GB", "1 TB"
+    - [x] Parse "10KB", "5MB", "2GB" (no space)
+    - [x] Parse short forms: "10K", "5M", "2G"
+    - [x] Parse plain numbers (assumes bytes)
+    - [x] Return bytes as integer
+    - [x] Comprehensive error handling
+  - [x] `format_time(dt: datetime, fmt: str)` method
+    - [x] Support custom format tokens (YYYY, MM, DD, HH, mm, ss, SSS)
+    - [x] Convert to Python's strftime format
+    - [x] Handle milliseconds (SSS)
+    - [x] Handle 12-hour format (hh, A)
+    - [x] Cross-platform compatibility (Windows/Unix)
+    - [x] Sort tokens by length to avoid partial replacements
 
-- [ ] **3.3 Custom Exceptions**
+- [x] **3.3 Custom Exceptions**
 
-  - [ ] `LoggerError` base exception
-  - [ ] `HandlerNotFoundError`
-  - [ ] `InvalidLevelError`
-  - [ ] `RotationError`
-  - [ ] `FormatterError`
+  - [x] `LoggerError` base exception
+  - [x] `HandlerNotFoundError` with handler_id attribute
+  - [x] `InvalidLevelError` with level attribute
+  - [x] `RotationError`
+  - [x] `FormatterError`
+  - [x] `CompressionError`
+  - [x] `RetentionError` (bonus)
+  - [x] `FilterError` (bonus)
+  - [x] `SinkError` (bonus)
+  - [x] Comprehensive docstrings with examples
+  - [x] Enhanced error messages
 
 **Deliverables**: Utility functions, constants, custom exceptions
 

@@ -156,28 +156,207 @@ class FrameInspector:
 
 
 class TimeUtils:
-    """Time-related utility functions"""
+    """Time-related utility functions for parsing and formatting
+    
+    This class provides utilities for:
+    - Parsing human-readable duration strings to timedelta
+    - Parsing human-readable size strings to bytes
+    - Formatting datetime with custom tokens (Loguru-style)
+    """
     
     @staticmethod
     def parse_duration(duration: str) -> timedelta:
-        """Parse duration string to timedelta"""
-        # TODO: Implement duration parsing
-        # Examples: "10 seconds", "5 minutes", "2 hours", "1 day"
-        return timedelta()
+        """Parse duration string to timedelta
+        
+        Supports various formats:
+        - "10 seconds", "5 minutes", "2 hours", "1 day"
+        - "10s", "5m", "2h", "1d"
+        - Multiple units: "1 day 2 hours 30 minutes"
+        - Fractional values: "1.5 hours", "0.5 days"
+        
+        Args:
+            duration: Duration string (e.g., "10 seconds", "5m", "2h 30m")
+            
+        Returns:
+            timedelta object representing the duration
+            
+        Raises:
+            ValueError: If duration format is invalid
+            
+        Examples:
+            >>> TimeUtils.parse_duration("10 seconds")
+            timedelta(seconds=10)
+            >>> TimeUtils.parse_duration("5m")
+            timedelta(seconds=300)
+            >>> TimeUtils.parse_duration("1d 2h 30m")
+            timedelta(days=1, seconds=9000)
+        """
+        from .constants import TIME_UNITS
+        
+        if not duration or not isinstance(duration, str):
+            raise ValueError(f"Invalid duration: {duration}")
+        
+        # Import here to avoid circular imports
+        import re
+        
+        # Clean up the string
+        duration = duration.strip().lower()
+        
+        # Pattern to match: number (optional space) unit
+        # Matches: "10s", "10 seconds", "10.5 hours", etc.
+        pattern = r'(\d+\.?\d*)\s*([a-z]+)'
+        matches = re.findall(pattern, duration)
+        
+        if not matches:
+            raise ValueError(f"Invalid duration format: {duration}")
+        
+        total_seconds = 0.0
+        
+        for value_str, unit in matches:
+            try:
+                value = float(value_str)
+            except ValueError:
+                raise ValueError(f"Invalid number: {value_str}")
+            
+            if unit not in TIME_UNITS:
+                raise ValueError(f"Unknown time unit: {unit}")
+            
+            total_seconds += value * TIME_UNITS[unit]
+        
+        return timedelta(seconds=total_seconds)
     
     @staticmethod
     def parse_size(size: str) -> int:
-        """Parse size string to bytes"""
-        # TODO: Implement size parsing
-        # Examples: "10 KB", "5 MB", "2 GB"
-        return 0
+        """Parse size string to bytes
+        
+        Supports various formats:
+        - "10 KB", "5 MB", "2 GB", "1 TB"
+        - "10KB", "5MB", "2GB"
+        - "10 K", "5 M", "2 G"
+        - Just number: "1024" (interpreted as bytes)
+        
+        Args:
+            size: Size string (e.g., "10 MB", "5KB", "1024")
+            
+        Returns:
+            Size in bytes as integer
+            
+        Raises:
+            ValueError: If size format is invalid
+            
+        Examples:
+            >>> TimeUtils.parse_size("10 KB")
+            10240
+            >>> TimeUtils.parse_size("5MB")
+            5242880
+            >>> TimeUtils.parse_size("1024")
+            1024
+        """
+        from .constants import SIZE_UNITS
+        
+        if not size:
+            raise ValueError("Size string cannot be empty")
+        
+        import re
+        
+        # Clean up the string
+        size_str = str(size).strip().upper()
+        
+        # Try to match: number (optional space) unit
+        # Pattern matches: "10KB", "10 KB", "10K", "10 K", "10"
+        pattern = r'^(\d+\.?\d*)\s*([A-Z]*)$'
+        match = re.match(pattern, size_str)
+        
+        if not match:
+            raise ValueError(f"Invalid size format: {size}")
+        
+        value_str, unit = match.groups()
+        
+        try:
+            value = float(value_str)
+        except ValueError:
+            raise ValueError(f"Invalid number: {value_str}")
+        
+        # If no unit, assume bytes
+        if not unit:
+            return int(value)
+        
+        if unit not in SIZE_UNITS:
+            raise ValueError(f"Unknown size unit: {unit}")
+        
+        return int(value * SIZE_UNITS[unit])
     
     @staticmethod
     def format_time(dt, fmt: str) -> str:
-        """Format datetime with custom tokens"""
-        # TODO: Implement custom time formatting
-        # Convert YYYY-MM-DD to strftime format
-        return str(dt)
+        """Format datetime with custom tokens (Loguru-style)
+        
+        Converts custom format tokens to Python strftime format.
+        
+        Supported tokens:
+        - YYYY: 4-digit year (2024)
+        - YY: 2-digit year (24)
+        - MMMM: Full month name (January)
+        - MMM: Abbreviated month (Jan)
+        - MM: 2-digit month (01)
+        - DD: 2-digit day (01)
+        - HH: 2-digit hour 24h (00-23)
+        - hh: 2-digit hour 12h (01-12)
+        - mm: 2-digit minute (00-59)
+        - ss: 2-digit second (00-59)
+        - SSS: Milliseconds (000-999)
+        - A: AM/PM
+        
+        Args:
+            dt: datetime object to format
+            fmt: Format string with custom tokens
+            
+        Returns:
+            Formatted datetime string
+            
+        Examples:
+            >>> from datetime import datetime
+            >>> dt = datetime(2024, 1, 15, 14, 30, 45, 123456)
+            >>> TimeUtils.format_time(dt, "YYYY-MM-DD HH:mm:ss")
+            '2024-01-15 14:30:45'
+            >>> TimeUtils.format_time(dt, "MMM DD, YYYY at hh:mm A")
+            'Jan 15, 2024 at 02:30 PM'
+        """
+        from .constants import DATETIME_FORMATS
+        from datetime import datetime
+        
+        if not isinstance(dt, datetime):
+            raise ValueError(f"Expected datetime object, got {type(dt)}")
+        
+        result = fmt
+        
+        # Sort tokens by length (longest first) to avoid partial replacements
+        # e.g., replace "YYYY" before "YY"
+        sorted_tokens = sorted(DATETIME_FORMATS.items(), key=lambda x: len(x[0]), reverse=True)
+        
+        for token, strftime_code in sorted_tokens:
+            if token in result:
+                if token == 'SSS':
+                    # Special handling for milliseconds
+                    milliseconds = dt.microsecond // 1000
+                    result = result.replace(token, f'{milliseconds:03d}')
+                elif token in ['M', 'D', 'H', 'm', 's', 'h']:
+                    # These format codes with '-' don't work on Windows
+                    # Use the zero-padded version and strip leading zero if needed
+                    if sys.platform == 'win32':
+                        # On Windows, use the zero-padded version
+                        padded_token = token * 2  # M -> MM, D -> DD, etc.
+                        if padded_token in DATETIME_FORMATS:
+                            formatted = dt.strftime(DATETIME_FORMATS[padded_token])
+                            # Strip leading zero
+                            result = result.replace(token, formatted.lstrip('0') or '0')
+                        else:
+                            result = result.replace(token, dt.strftime(DATETIME_FORMATS[token]))
+                    else:
+                        result = result.replace(token, dt.strftime(DATETIME_FORMATS[token]))
+                else:
+                    result = result.replace(token, dt.strftime(strftime_code))
+        
+        return result
 
 
 class Serializer:
