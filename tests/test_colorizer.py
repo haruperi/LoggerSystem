@@ -469,3 +469,4 @@ class TestColorizerIntegration:
         assert '\x1b[31m' not in colored2  # No red
         assert "Hello" in colored2
 
+
