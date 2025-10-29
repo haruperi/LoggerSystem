@@ -5,12 +5,14 @@ This module provides advanced formatting capabilities including:
 - Token-based format string parsing
 - Nested field access (e.g., level.name, extra.user_id)
 - Format specifications (alignment, width, precision)
-- Color tag parsing (for Day 9 colorization)
+- Color tag parsing and colorization
 """
 
-from typing import Any, List, Optional
+from typing import Any, List, Optional, Dict
 import re
+import os
 from datetime import datetime
+from .constants import COLORS, BG_COLORS
 
 
 class Token:
@@ -59,6 +61,139 @@ class Token:
             return f"Token(field, {self.field_name!r}, spec={self.format_spec!r})"
 
 
+class Colorizer:
+    """Handle ANSI color code application and stripping
+    
+    This class provides methods to:
+    - Apply ANSI color codes to text
+    - Map color names to ANSI codes
+    - Map log levels to default colors
+    - Strip color codes from text
+    - Check for NO_COLOR environment variable
+    
+    Attributes:
+        colors: Dictionary of color name to ANSI code mappings
+        level_colors: Dictionary of log level to color mappings
+    """
+    
+    def __init__(self):
+        """Initialize the colorizer with color mappings"""
+        # Combine foreground and background colors
+        self.colors: Dict[str, str] = {**COLORS, **BG_COLORS}
+        
+        # Define default color scheme for log levels
+        self.level_colors: Dict[str, str] = {
+            'TRACE': 'dim+cyan',      # Dim cyan for trace
+            'DEBUG': 'cyan',          # Cyan for debug
+            'INFO': 'white',          # White for info
+            'SUCCESS': 'bold+green',  # Bold green for success
+            'WARNING': 'yellow',      # Yellow for warning
+            'ERROR': 'red',           # Red for error
+            'CRITICAL': 'bold+red',   # Bold red for critical
+        }
+    
+    def colorize(self, text: str, color: str) -> str:
+        """Apply color to text
+        
+        Args:
+            text: Text to colorize
+            color: Color name or combination (e.g., 'red', 'bold+green')
+            
+        Returns:
+            Text with ANSI color codes
+            
+        Examples:
+            >>> colorizer.colorize("Hello", "red")
+            '\\x1b[31mHello\\x1b[0m'
+            >>> colorizer.colorize("Bold", "bold+green")
+            '\\x1b[1m\\x1b[32mBold\\x1b[0m'
+        """
+        if not color or not text:
+            return text
+        
+        # Handle combined colors (e.g., 'bold+red')
+        color_parts = color.split('+')
+        
+        # Build opening codes
+        codes = []
+        for part in color_parts:
+            part = part.strip()
+            if part in self.colors:
+                codes.append(self.colors[part])
+        
+        if not codes:
+            return text
+        
+        # Apply colors: codes + text + reset
+        return ''.join(codes) + text + self.colors['reset']
+    
+    def get_level_color(self, level_name: str) -> str:
+        """Get the default color for a log level
+        
+        Args:
+            level_name: Log level name (e.g., 'INFO', 'ERROR')
+            
+        Returns:
+            Color name or combination for the level
+        """
+        return self.level_colors.get(level_name.upper(), 'white')
+    
+    def colorize_level(self, text: str, level_name: str) -> str:
+        """Colorize text using the level's default color
+        
+        Args:
+            text: Text to colorize
+            level_name: Log level name
+            
+        Returns:
+            Colorized text
+        """
+        color = self.get_level_color(level_name)
+        return self.colorize(text, color)
+    
+    def strip_colors(self, text: str) -> str:
+        """Remove ANSI color codes from text
+        
+        Args:
+            text: Text containing ANSI color codes
+            
+        Returns:
+            Text without color codes
+        """
+        # Remove ANSI escape sequences
+        ansi_pattern = re.compile(r'\x1b\[[0-9;]*m')
+        return ansi_pattern.sub('', text)
+    
+    def should_colorize(self) -> bool:
+        """Check if colorization should be enabled
+        
+        Checks the NO_COLOR environment variable. If set (to any value),
+        colorization should be disabled.
+        
+        Returns:
+            True if colorization should be enabled, False otherwise
+        """
+        # Check NO_COLOR environment variable
+        # https://no-color.org/
+        return not os.environ.get('NO_COLOR')
+    
+    def apply_color_tag(self, text: str, tag: str, level_name: Optional[str] = None) -> str:
+        """Apply color based on a tag name
+        
+        Args:
+            text: Text to colorize
+            tag: Color tag (e.g., 'red', 'green', 'level')
+            level_name: Optional level name for 'level' tag
+            
+        Returns:
+            Colorized text
+        """
+        if tag == 'level' and level_name:
+            return self.colorize_level(text, level_name)
+        else:
+            return self.colorize(text, tag)
+
+
 class Formatter:
     """Format log records into strings
     
@@ -80,11 +215,12 @@ class Formatter:
         
         Args:
             format_string: Format template (if None, use default)
-            colorize: Enable colorization (will be used in Day 9)
+            colorize: Enable colorization
         """
         self.format_string = format_string or self._default_format()
         self.colorize = colorize
         self.tokens: List[Token] = []
+        self.colorizer = Colorizer()
         self._parse_format_string()
     
     def _default_format(self) -> str:
@@ -194,6 +330,7 @@ class Formatter:
         """
         try:
             result = []
+            color_stack = []  # Track nested color tags
             
             for token in self.tokens:
                 if token.type == 'literal':
@@ -209,19 +346,87 @@ class Formatter:
                     result.append(formatted)
                 
                 elif token.type == 'color_start':
-                    # Color tags will be processed in Day 9
-                    # For now, just skip them (no color applied)
-                    pass
+                    # Apply color if colorization is enabled
+                    if self.colorize:
+                        color_tag = token.value
+                        color_stack.append(color_tag)
+                        # Start capturing text for colorization
+                        result.append('\x00COLOR_START:' + color_tag + '\x00')
                 
                 elif token.type == 'color_end':
-                    # Color tags will be processed in Day 9
-                    pass
+                    # Close color tag if colorization is enabled
+                    if self.colorize and color_stack:
+                        color_stack.pop()
+                        result.append('\x00COLOR_END\x00')
             
-            return ''.join(result)
+            # Join all parts
+            formatted_text = ''.join(result)
+            
+            # Apply colors if enabled
+            if self.colorize:
+                formatted_text = self._apply_colors(formatted_text, record)
+            
+            return formatted_text
             
         except Exception as e:
             # Fallback to simple format if something goes wrong
             return f"[{record.level.name}] {record.message} [FORMAT ERROR: {e}]"
+    
+    def _apply_colors(self, text: str, record: 'LogRecord') -> str:
+        """Apply color tags to formatted text
+        
+        Args:
+            text: Formatted text with color markers
+            record: LogRecord for level-based coloring
+            
+        Returns:
+            Text with ANSI color codes
+        """
+        # Process color markers using a stack-based approach
+        result = []
+        i = 0
+        color_stack = []
+        
+        while i < len(text):
+            if text[i:i+1] == '\x00':
+                # Find the end of the marker
+                end = text.find('\x00', i + 1)
+                if end != -1:
+                    marker = text[i+1:end]
+                    
+                    if marker.startswith('COLOR_START:'):
+                        # Extract and push color tag
+                        color_tag = marker[12:]  # Skip 'COLOR_START:'
+                        color_stack.append(color_tag)
+                        i = end + 1
+                        continue
+                    
+                    elif marker == 'COLOR_END':
+                        # Pop the most recent color
+                        if color_stack:
+                            color_stack.pop()
+                        i = end + 1
+                        continue
+            
+            # Regular character - accumulate until next marker
+            char_start = i
+            while i < len(text) and text[i:i+1] != '\x00':
+                i += 1
+            
+            # Get the text segment
+            segment = text[char_start:i]
+            
+            if segment and color_stack:
+                # Apply the current color
+                color_tag = color_stack[-1]
+                if color_tag == 'level':
+                    segment = self.colorizer.colorize_level(segment, record.level.name)
+                else:
+                    segment = self.colorizer.colorize(segment, color_tag)
+            
+            result.append(segment)
+        
+        return ''.join(result)
     
     def get_field_value(self, record: 'LogRecord', field_name: str) -> Any:
         """Extract field value from record with nested access support
