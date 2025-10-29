@@ -111,17 +111,25 @@ Phase 5: Testing & Polish (Days 15-20)
 
 **Priority: CRITICAL**
 
-- [ ] **2.1 Frame Inspector Utility**
+- [x] **2.1 Frame Inspector Utility**
 
-  - [ ] Create `FrameInspector` class in utils.py
-  - [ ] `get_caller_frame(depth: int)` method
-    - [ ] Use `sys._getframe()` or `inspect.currentframe()`
-    - [ ] Handle depth parameter correctly
-  - [ ] `extract_frame_info(frame)` method
-    - [ ] Extract filename, function name, line number
-    - [ ] Extract module name
-    - [ ] Get code context (5 lines around current line)
-  - [ ] Add error handling for missing frames
+  - [x] Create `FrameInspector` class in utils.py
+  - [x] `get_caller_frame(depth: int)` method
+    - [x] Use `sys._getframe()` (faster than inspect.currentframe())
+    - [x] Handle depth parameter correctly (+1 to skip method itself)
+    - [x] Return Optional[FrameType]
+  - [x] `extract_frame_info(frame)` method
+    - [x] Extract filename (full path) and file_name (base name)
+    - [x] Extract function name, line number
+    - [x] Extract module name from frame globals
+    - [x] Get code context (5 lines around current line)
+    - [x] Return context_line (the specific line)
+  - [x] Add error handling for missing frames
+    - [x] Return None for excessive depth
+    - [x] Return safe defaults for None frame
+  - [x] `_get_code_context()` helper method using linecache
+  - [x] `clear_cache()` method for cache management
+  - [x] Comprehensive docstrings and type hints
 
 - [ ] **2.2 LogRecord Class**
 
